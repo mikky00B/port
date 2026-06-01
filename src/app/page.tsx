@@ -17,7 +17,7 @@ export default function HomePage() {
       <Container>
         <section className="flex min-h-[calc(100vh-4rem)] items-center py-16">
           <div>
-            <Badge className="border-success/30 bg-success/10 text-success">Open to job opportunities</Badge>
+            <Badge className="border-success/30 bg-success/10 text-success">currently Open to job opportunities</Badge>
             <h1 className="mt-6 font-heading text-5xl font-semibold tracking-tight text-text sm:text-6xl">
               Michael Abulude
             </h1>
