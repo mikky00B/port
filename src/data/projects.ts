@@ -21,6 +21,81 @@ export type Project = {
 
 export const projects: Project[] = [
   {
+    slug: "chess-arena",
+    title: "Chess-Arena",
+    description:
+      "A chess platform first, with optional competitive and Web3 modes layered onto the core realtime game experience.",
+    category: "Web3 / Backend / Realtime",
+    status: "In Progress",
+    stack: ["FastAPI", "React", "Redis", "Vyper", "chess.js", "react-chessboard"],
+    challenge:
+      "Combining smart contract escrow, backend signing, game state, and delayed payout logic.",
+    githubUrl: "https://github.com/mikky00B",
+    caseStudyUrl: "/projects/chess-arena",
+    featured: false,
+    summary:
+      "Chess-Arena explores realtime game state, Web3 escrow flows, and clean separation between gameplay and competitive payout logic.",
+    focus: "Realtime backend, Web3 coordination, game state",
+    architecture: [
+      "Player Client",
+      "React Chessboard",
+      "FastAPI Game API",
+      "Redis Game State",
+      "Escrow Contract",
+      "Payout Worker"
+    ],
+    features: [
+      "Realtime chess game flow",
+      "Optional Web3 competitive mode",
+      "Backend-signed game outcomes",
+      "Delayed payout and dispute-aware logic"
+    ],
+    lessons: [
+      "Gameplay should remain useful even without Web3 features enabled.",
+      "Escrow systems need explicit state transitions.",
+      "Realtime applications benefit from narrow backend contracts."
+    ]
+  },
+  {
+    slug: "gatekeeper",
+    title: "Gatekeeper",
+    description:
+      "A self-hosted API gateway in Go with config-driven reverse proxy routing, load balancing, auth, rate limiting, observability, and admin tooling.",
+    category: "Backend / API Gateway / Infrastructure",
+    status: "Live",
+    stack: ["Go", "Redis", "JWT", "TLS", "Reverse Proxy"],
+    challenge:
+      "Building a gateway that keeps routing, upstream health, authentication, rate limits, analytics, and config reloads predictable under one operational surface.",
+    githubUrl: "https://github.com/mikky00B/Gatekeeper",
+    caseStudyUrl: "/projects/gatekeeper",
+    featured: false,
+    summary:
+      "Gatekeeper is a self-hosted API gateway written in Go, designed around config-driven reverse proxy routes, multiple upstreams, round-robin load balancing, optional health checks, API key and JWT authentication, rate limiting, logging, analytics, TLS, an admin API, a static dashboard, and CLI helpers.",
+    focus: "API gateway design, proxying, traffic control",
+    architecture: [
+      "Client Request",
+      "Gatekeeper Router",
+      "Authentication Layer",
+      "Rate Limiter",
+      "Load Balancer",
+      "Upstream Services",
+      "Admin API / Dashboard"
+    ],
+    features: [
+      "Config-driven reverse proxy routing",
+      "Multiple upstreams per route with round-robin balancing",
+      "Optional upstream health checks",
+      "API key authentication and optional HS256 JWT verification",
+      "In-memory or Redis-backed rate limiting",
+      "Request logging, route analytics, hot config reload, TLS, dashboard, and CLI helpers"
+    ],
+    lessons: [
+      "Gateway behavior needs clear config boundaries and predictable reload semantics.",
+      "Traffic control features work best when authentication, rate limits, and upstream health share a simple request flow.",
+      "Operational APIs need visibility through logs, analytics, and a dashboard, not just proxy behavior."
+    ]
+  },
+  {
     slug: "watchdog",
     title: "WATCHDOG",
     description:
@@ -58,39 +133,26 @@ export const projects: Project[] = [
     ]
   },
   {
-    slug: "chess-arena",
-    title: "Chess-Arena",
+    slug: "token-approval-scanner",
+    title: "Token Approval Scanner",
     description:
-      "A chess platform first, with optional competitive and Web3 modes layered onto the core realtime game experience.",
-    category: "Web3 / Backend / Realtime",
-    status: "In Progress",
-    stack: ["FastAPI", "React", "Redis", "Vyper", "chess.js", "react-chessboard"],
-    challenge:
-      "Combining smart contract escrow, backend signing, game state, and delayed payout logic.",
+      "A tool that helps users inspect active token approvals and revoke risky allowances.",
+    category: "Web3 / Security Tool",
+    status: "Archived",
+    stack: ["React", "Ethers", "Blockchain RPC APIs"],
+    challenge: "Reading wallet allowances and creating a clean interface for safer Web3 usage.",
     githubUrl: "https://github.com/mikky00B",
-    caseStudyUrl: "/projects/chess-arena",
+    caseStudyUrl: "/projects/token-approval-scanner",
     featured: false,
     summary:
-      "Chess-Arena explores realtime game state, Web3 escrow flows, and clean separation between gameplay and competitive payout logic.",
-    focus: "Realtime backend, Web3 coordination, game state",
-    architecture: [
-      "Player Client",
-      "React Chessboard",
-      "FastAPI Game API",
-      "Redis Game State",
-      "Escrow Contract",
-      "Payout Worker"
-    ],
-    features: [
-      "Realtime chess game flow",
-      "Optional Web3 competitive mode",
-      "Backend-signed game outcomes",
-      "Delayed payout and dispute-aware logic"
-    ],
+      "A security-focused Web3 utility for making token approvals easier to inspect and reason about.",
+    focus: "Wallet safety, chain reads, frontend clarity",
+    architecture: ["Wallet", "React UI", "RPC Provider", "Token Contracts", "Approval Table"],
+    features: ["Wallet approval lookup", "Risky allowance highlighting", "Revoke flow concept"],
     lessons: [
-      "Gameplay should remain useful even without Web3 features enabled.",
-      "Escrow systems need explicit state transitions.",
-      "Realtime applications benefit from narrow backend contracts."
+      "Security tools need plain language.",
+      "RPC reads should be batched where possible.",
+      "Wallet UX needs careful error states."
     ]
   },
   {
@@ -126,29 +188,6 @@ export const projects: Project[] = [
       "Redirect paths should stay small and cache-friendly.",
       "Analytics ingestion should not slow down user navigation.",
       "Production-style features create useful edge cases quickly."
-    ]
-  },
-  {
-    slug: "token-approval-scanner",
-    title: "Token Approval Scanner",
-    description:
-      "A tool that helps users inspect active token approvals and revoke risky allowances.",
-    category: "Web3 / Security Tool",
-    status: "Archived",
-    stack: ["React", "Ethers", "Blockchain RPC APIs"],
-    challenge: "Reading wallet allowances and creating a clean interface for safer Web3 usage.",
-    githubUrl: "https://github.com/mikky00B",
-    caseStudyUrl: "/projects/token-approval-scanner",
-    featured: false,
-    summary:
-      "A security-focused Web3 utility for making token approvals easier to inspect and reason about.",
-    focus: "Wallet safety, chain reads, frontend clarity",
-    architecture: ["Wallet", "React UI", "RPC Provider", "Token Contracts", "Approval Table"],
-    features: ["Wallet approval lookup", "Risky allowance highlighting", "Revoke flow concept"],
-    lessons: [
-      "Security tools need plain language.",
-      "RPC reads should be batched where possible.",
-      "Wallet UX needs careful error states."
     ]
   }
 ];
