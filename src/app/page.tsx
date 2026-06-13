@@ -37,7 +37,6 @@ export default function HomePage() {
           <SectionHeader
             eyebrow="Projects"
             title="A look at some of my recent projects."
-            description="Each project links directly to the live product and GitHub repository when available."
           />
           <div className="mt-8 grid gap-5 md:grid-cols-2">
             {projects.map((project) => (

@@ -134,7 +134,7 @@ export const projects: Project[] = [
   },
   {
     slug: "token-approval-scanner",
-    title: "Token Approval Scanner",
+    title: "CScan",
     description:
       "A tool that helps users inspect active token approvals and revoke risky allowances.",
     category: "Web3 / Security Tool",
