@@ -21,9 +21,6 @@ export function ProjectCard({ project }: { project: Project }) {
           <TechBadge key={tech}>{tech}</TechBadge>
         ))}
       </div>
-      <p className="mt-5 text-sm leading-6 text-slate-400">
-        <span className="text-text">Challenge:</span> {project.challenge}
-      </p>
       <div className="mt-6 flex flex-wrap gap-3">
         {project.liveUrl ? (
           <Link

@@ -71,10 +71,6 @@ export default async function ProjectCaseStudyPage({ params }: ProjectRouteProps
       <div className="mt-16 grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="space-y-8">
           <section>
-            <SectionHeader eyebrow="Problem" title="The engineering problem." />
-            <p className="mt-4 leading-8 text-muted">{project.challenge}</p>
-          </section>
-          <section>
             <SectionHeader eyebrow="Solution" title="A focused, system-first implementation." />
             <p className="mt-4 leading-8 text-muted">
               The project turns the core problem into clear services, explicit data flows, and a dashboard that makes operational state easy to inspect.
@@ -97,7 +93,7 @@ export default async function ProjectCaseStudyPage({ params }: ProjectRouteProps
         </section>
       </div>
 
-      <div className="mt-16 grid gap-5 lg:grid-cols-3">
+      <div className="mt-16 grid gap-5 lg:grid-cols-2">
         <Card>
           <h2 className="font-heading text-xl font-semibold text-text">Core Features</h2>
           <ul className="mt-5 space-y-3 text-sm leading-6 text-muted">
@@ -105,10 +101,6 @@ export default async function ProjectCaseStudyPage({ params }: ProjectRouteProps
               <li key={feature}>{feature}</li>
             ))}
           </ul>
-        </Card>
-        <Card>
-          <h2 className="font-heading text-xl font-semibold text-text">Challenges</h2>
-          <p className="mt-5 text-sm leading-7 text-muted">{project.challenge}</p>
         </Card>
         <Card>
           <h2 className="font-heading text-xl font-semibold text-text">What I Learned</h2>
