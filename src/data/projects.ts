@@ -21,6 +21,42 @@ export type Project = {
 
 export const projects: Project[] = [
   {
+    slug: "swindle",
+    title: "Swindle",
+    description:
+      "A chess storytelling app that turns recent games into a private chess journal, detects story-worthy moments, and renders shareable activity cards.",
+    category: "Chess / Storytelling / Social",
+    status: "Live",
+    stack: ["Next.js", "React", "Chess", "Tailwind CSS"],
+    challenge:
+      "Turning raw chess game history into readable journal entries, meaningful highlights, and shareable cards without making the experience feel like another analytics dashboard.",
+    liveUrl: "https://swindle.clevermike.studio/",
+    caseStudyUrl: "/projects/swindle",
+    featured: true,
+    summary:
+      "Swindle is a chess storytelling app that turns recent games into a private journal, surfaces story-worthy moments, creates shareable chess activity cards, and lets users publish selected cards to a simple social feed.",
+    focus: "Chess product UX, game narratives, social sharing",
+    architecture: [
+      "Player Games",
+      "Game Import",
+      "Moment Detection",
+      "Private Journal",
+      "Card Renderer",
+      "Social Feed"
+    ],
+    features: [
+      "Private chess journal built from recent games",
+      "Story-worthy moment detection",
+      "Shareable chess activity cards",
+      "Selected card publishing to a simple social feed"
+    ],
+    lessons: [
+      "Chess apps can be more approachable when games are framed as stories, not only analysis.",
+      "Generated highlights need clear user control before becoming public content.",
+      "Shareable cards work best when the visual summary is useful without requiring the full game context."
+    ]
+  },
+  {
     slug: "chess-arena",
     title: "Chess-Arena",
     description:
