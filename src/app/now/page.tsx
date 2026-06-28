@@ -28,7 +28,7 @@ export default function NowPage() {
             <div className="mt-6 space-y-3">
               {section.items.map((item) => (
                 <div key={item} className="flex items-start gap-3 text-sm leading-6 text-muted">
-                  <span className="mt-2"><StatusDot tone="cyan" /></span>
+                  <span className="mt-2"><StatusDot /></span>
                   {item}
                 </div>
               ))}

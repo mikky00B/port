@@ -16,9 +16,7 @@ html {
 
 body {
   margin: 0;
-  background:
-    radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 34rem),
-    linear-gradient(180deg, #0b1120 0%, #0f172a 48%, #0b1120 100%);
+  background: #050505;
   color: #f9fafb;
 }
 
@@ -28,13 +26,14 @@ a {
 }
 
 ::selection {
-  background: rgba(56, 189, 248, 0.3);
+  background: rgba(255, 255, 255, 0.24);
+  color: #050505;
 }
 
 .dashboard-grid {
   background-image:
-    linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
   background-size: 48px 48px;
 }
 
@@ -67,5 +66,5 @@ a {
 }
 
 .prose-dev pre {
-  @apply mt-5 overflow-x-auto rounded-lg border border-line bg-[#020617] p-5 font-mono text-sm text-slate-200;
+  @apply mt-5 overflow-x-auto rounded-lg border border-line bg-black p-5 font-mono text-sm text-neutral-200;
 }

@@ -3,7 +3,6 @@ import { ArrowUpRight, Github } from "lucide-react";
 import { Project } from "@/data/projects";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
-import { TechBadge } from "@/components/ui/TechBadge";
 
 export function ProjectCard({ project }: { project: Project }) {
   return (
@@ -16,11 +15,6 @@ export function ProjectCard({ project }: { project: Project }) {
         <Badge>{project.status}</Badge>
       </div>
       <p className="mt-4 flex-1 leading-7 text-muted">{project.description}</p>
-      <div className="mt-5 flex flex-wrap gap-2">
-        {project.stack.slice(0, 5).map((tech) => (
-          <TechBadge key={tech}>{tech}</TechBadge>
-        ))}
-      </div>
       <div className="mt-6 flex flex-wrap gap-3">
         {project.liveUrl ? (
           <Link

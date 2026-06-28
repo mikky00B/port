@@ -1,10 +1,9 @@
 import { cn } from "@/lib/utils";
 
 const tones = {
-  green: "bg-success shadow-[0_0_0_5px_rgba(34,197,94,0.12)]",
-  cyan: "bg-accent shadow-[0_0_0_5px_rgba(56,189,248,0.12)]",
-  gray: "bg-dim shadow-[0_0_0_5px_rgba(107,114,128,0.12)]",
-  amber: "bg-warning shadow-[0_0_0_5px_rgba(245,158,11,0.12)]"
+  green: "bg-text shadow-[0_0_0_5px_rgba(255,255,255,0.10)]",
+  gray: "bg-dim shadow-[0_0_0_5px_rgba(255,255,255,0.08)]",
+  amber: "bg-muted shadow-[0_0_0_5px_rgba(255,255,255,0.10)]"
 };
 
 export function StatusDot({ tone = "green" }: { tone?: keyof typeof tones }) {

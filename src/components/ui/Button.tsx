@@ -9,8 +9,8 @@ type ButtonProps = {
 };
 
 const variants = {
-  primary: "border-accent bg-accent text-slate-950 hover:bg-sky-300",
-  secondary: "border-line bg-panel text-text hover:border-accent hover:text-accent",
+  primary: "border-text bg-text text-background hover:bg-neutral-200",
+  secondary: "border-line bg-panel text-text hover:border-text hover:bg-panel2",
   ghost: "border-transparent bg-transparent text-muted hover:text-text"
 };
 

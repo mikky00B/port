@@ -68,7 +68,7 @@ export function CommandPalette() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/70 p-4 backdrop-blur" role="dialog" aria-modal="true" aria-label="Command palette">
+    <div className="fixed inset-0 z-50 bg-black/72 p-4 backdrop-blur" role="dialog" aria-modal="true" aria-label="Command palette">
       <div className="mx-auto mt-24 max-w-2xl overflow-hidden rounded-lg border border-line bg-panel shadow-glow">
         <div className="flex items-center gap-3 border-b border-line px-4 py-3">
           <Search className="h-5 w-5 text-dim" />

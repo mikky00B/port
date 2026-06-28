@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import { TechBadge } from "@/components/ui/TechBadge";
 import { getProject, projects } from "@/data/projects";
 
 export function generateStaticParams() {
@@ -76,14 +75,6 @@ export default async function ProjectCaseStudyPage({ params }: ProjectRouteProps
               The project turns the core problem into clear services, explicit data flows, and a dashboard that makes operational state easy to inspect.
             </p>
           </section>
-          <section>
-            <SectionHeader eyebrow="Stack" title="Tools used." />
-            <div className="mt-5 flex flex-wrap gap-2">
-              {project.stack.map((tech) => (
-                <TechBadge key={tech}>{tech}</TechBadge>
-              ))}
-            </div>
-          </section>
         </div>
         <section>
           <SectionHeader eyebrow="Architecture" title="System flow." />
@@ -114,7 +105,7 @@ export default async function ProjectCaseStudyPage({ params }: ProjectRouteProps
 
       <Card className="mt-16">
         <h2 className="font-heading text-xl font-semibold text-text">Screenshots / UI Mockup</h2>
-        <div className="mt-5 rounded-lg border border-line bg-[#020617] p-5">
+        <div className="mt-5 rounded-lg border border-line bg-black p-5">
           <div className="grid gap-3 sm:grid-cols-3">
             {["Overview", "Metrics", "Incidents"].map((panel) => (
               <div key={panel} className="min-h-28 rounded-md border border-line bg-panel2 p-4">
