@@ -1,5 +1,4 @@
 import { ProjectCard } from "@/components/projects/ProjectCard";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
@@ -17,7 +16,6 @@ export default function HomePage() {
       <Container>
         <section className="flex min-h-[calc(100vh-4rem)] items-center py-16">
           <div>
-            <Badge className="border-text bg-text text-background">currently Open to job opportunities</Badge>
             <h1 className="mt-6 font-heading text-5xl font-semibold tracking-tight text-text sm:text-6xl">
               Michael Abulude
             </h1>
