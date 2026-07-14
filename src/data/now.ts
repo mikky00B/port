@@ -6,7 +6,10 @@ export type NowItem = {
 export const nowItems: NowItem[] = [
   {
     title: "Currently Building",
-    items: ["Personal developer command center", "Go reverse proxy / API gateway", "WATCHDOG alert improvements"]
+    items: [
+      "WATCHDOG alert improvements",
+      "DeployDock — a self-hosted deployment control panel for developers and small teams already running apps on VPS servers"
+    ]
   },
   {
     title: "Currently Learning",
