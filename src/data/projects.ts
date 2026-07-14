@@ -197,7 +197,7 @@ export const projects: Project[] = [
     description:
       "A production-style URL shortener with custom slugs, expiry, QR codes, password protection, and analytics.",
     category: "Backend / System Design / Analytics",
-    status: "In Progress",
+    status: "Archived",
     stack: ["FastAPI", "PostgreSQL", "Redis", "React", "Tailwind CSS"],
     challenge: "Optimizing redirect speed, click ingestion, Redis caching, and analytics rollups.",
     githubUrl: "https://github.com/mikky00B",

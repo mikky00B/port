@@ -21,7 +21,7 @@ export default function HomePage() {
             </h1>
             <p className="mt-4 text-xl font-medium text-accent">Backend-Focused Software Developer</p>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-muted">
-              I build scalable APIs, monitoring tools, automation systems, and practical web apps using Python, FastAPI, Django, Go, React, and PostgreSQL.
+              I build scalable APIs, monitoring tools, automation systems, and practical web systems using Python and Go.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button href="/#projects">View Projects</Button>
@@ -60,7 +60,7 @@ export default function HomePage() {
         <section className="py-16">
           <Card className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="font-heading text-2xl font-semibold text-text">Interested in backend systems or practical product work?</h2>
+              <h2 className="font-heading text-2xl font-semibold text-text">Interested in hiring me for a role?</h2>
               <p className="mt-2 text-muted">Send a message about a role, freelance project, or collaboration.</p>
             </div>
             <Button href="/contact">Contact Michael</Button>
