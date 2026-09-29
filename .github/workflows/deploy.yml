@@ -1,4 +1,4 @@
-name: Deploy to Azure VM
+name: CI/CD - clevermike.studio
 
 on:
   push:
@@ -6,17 +6,18 @@ on:
       - main
 
 jobs:
-  deploy:
+  test:
+    name: Test clevermike.studio
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: "22"
           cache: npm
 
       - name: Install dependencies
@@ -28,12 +29,51 @@ jobs:
       - name: Build app
         run: npm run build
 
-      - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1.2.0
+  deploy:
+    name: Deploy clevermike.studio
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to Contabo
+        uses: appleboy/ssh-action@v1.2.2
         with:
-          host: ${{ secrets.AZURE_VM_HOST }}
-          username: ${{ secrets.AZURE_VM_USER }}
-          key: ${{ secrets.AZURE_VM_SSH_KEY }}
-          port: ${{ secrets.AZURE_VM_PORT || 22 }}
+          host: ${{ secrets.CONTABO_HOST }}
+          username: ${{ secrets.CONTABO_USER }}
+          key: ${{ secrets.CONTABO_SSH_KEY }}
+          port: 22
+          script_stop: true
           script: |
-            /var/www/port/deploy.sh
+            set -e
+
+            cd /opt/apps/mike/port
+
+            echo "Pulling latest code..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "Installing dependencies..."
+            npm ci
+
+            echo "Building clevermike.studio..."
+            npm run build
+
+            echo "Restarting clevermike..."
+            sudo -n /usr/bin/systemctl restart clevermike
+
+            echo "Checking clevermike service..."
+            sudo -n /usr/bin/systemctl is-active --quiet clevermike
+
+            echo "Waiting for app..."
+            for i in 1 2 3 4 5 6; do
+              if curl -fsS http://127.0.0.1:8008/ > /dev/null; then
+                echo "clevermike.studio is healthy"
+                exit 0
+              fi
+              echo "Waiting for app (attempt $i/6)..."
+              sleep 5
+            done
+
+            echo "clevermike.studio did not become healthy after restart"
+            sudo -n /usr/bin/journalctl -u clevermike -n 50 --no-pager
+            exit 1
