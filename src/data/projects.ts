@@ -10,7 +10,7 @@ export type Project = {
   challenge: string;
   liveUrl?: string;
   githubUrl?: string;
-  caseStudyUrl: string;
+  caseStudyUrl?: string;
   featured: boolean;
   summary: string;
   focus: string;
@@ -107,7 +107,6 @@ export const projects: Project[] = [
     challenge:
       "Turning raw chess game history into readable journal entries, meaningful highlights, and shareable cards without making the experience feel like another analytics dashboard.",
     liveUrl: "https://swindle.clevermike.studio/",
-    caseStudyUrl: "/projects/swindle",
     featured: true,
     summary:
       "Swindle is a chess storytelling app that turns recent games into a private journal, surfaces story-worthy moments, creates shareable chess activity cards, and lets users publish selected cards to a simple social feed.",
@@ -143,7 +142,6 @@ export const projects: Project[] = [
     challenge:
       "Combining smart contract escrow, backend signing, game state, and delayed payout logic.",
     githubUrl: "https://github.com/mikky00B/Chess-Arena",
-    caseStudyUrl: "/projects/chess-arena",
     featured: false,
     summary:
       "Chess-Arena explores realtime game state, Web3 escrow flows, and clean separation between gameplay and competitive payout logic.",
@@ -179,7 +177,6 @@ export const projects: Project[] = [
     challenge:
       "Building a gateway that keeps routing, upstream health, authentication, rate limits, analytics, and config reloads predictable under one operational surface.",
     githubUrl: "https://github.com/mikky00B/Gatekeeper",
-    caseStudyUrl: "/projects/gatekeeper",
     featured: false,
     summary:
       "Gatekeeper is a self-hosted API gateway written in Go, designed around config-driven reverse proxy routes, multiple upstreams, round-robin load balancing, optional health checks, API key and JWT authentication, rate limiting, logging, analytics, TLS, an admin API, a static dashboard, and CLI helpers.",
@@ -217,7 +214,6 @@ export const projects: Project[] = [
     stack: ["React", "Ethers", "Blockchain RPC APIs"],
     challenge: "Reading wallet allowances and creating a clean interface for safer Web3 usage.",
     githubUrl: "https://github.com/mikky00B/CScan",
-    caseStudyUrl: "/projects/token-approval-scanner",
     featured: false,
     summary:
       "A security-focused Web3 utility for making token approvals easier to inspect and reason about.",
@@ -240,7 +236,6 @@ export const projects: Project[] = [
     stack: ["FastAPI", "PostgreSQL", "Redis", "React", "Tailwind CSS"],
     challenge: "Optimizing redirect speed, click ingestion, Redis caching, and analytics rollups.",
     githubUrl: "https://github.com/mikky00B",
-    caseStudyUrl: "/projects/url-shortener",
     featured: false,
     summary:
       "A URL shortener built as a system design exercise, focused on fast redirects, analytics capture, custom links, and operational safety.",

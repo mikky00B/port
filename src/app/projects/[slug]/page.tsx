@@ -7,7 +7,9 @@ import { Container } from "@/components/ui/Container";
 import { getProject, projects } from "@/data/projects";
 
 export function generateStaticParams() {
-  return projects.map((project) => ({ slug: project.slug }));
+  return projects
+    .filter((project) => project.caseStudyUrl)
+    .map((project) => ({ slug: project.slug }));
 }
 
 type ProjectRouteProps = {
@@ -17,7 +19,7 @@ type ProjectRouteProps = {
 export async function generateMetadata({ params }: ProjectRouteProps): Promise<Metadata> {
   const { slug } = await params;
   const project = getProject(slug);
-  if (!project) {
+  if (!project?.caseStudyUrl) {
     return {};
   }
 
@@ -39,7 +41,7 @@ export default async function ProjectCaseStudyPage({ params }: ProjectRouteProps
   const { slug } = await params;
   const project = getProject(slug);
 
-  if (!project) {
+  if (!project?.caseStudyUrl) {
     notFound();
   }
 
