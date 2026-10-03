@@ -30,6 +30,7 @@ export const projects: Project[] = [
     stack: ["FastAPI", "PostgreSQL", "React", "Vite", "Go", "Docker"],
     challenge:
       "Automating deployments on servers people already run, without forcing a new runtime — while keeping SSH access pinned and audited, secrets encrypted, and every release health-gated before traffic switches.",
+    liveUrl: "https://deploydock.tech",
     githubUrl: "https://github.com/mikky00B/DeployDock",
     caseStudyUrl: "/projects/deploydock",
     featured: true,
