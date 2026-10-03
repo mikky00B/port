@@ -26,7 +26,13 @@ export default function HomePage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button href="/#projects">View Projects</Button>
               <Button href="/contact" variant="secondary">Contact Me</Button>
-              <Button href={socials.resume} variant="ghost">Download Resume</Button>
+              <Button
+                href={socials.resume}
+                variant="ghost"
+                download="Michael_Abulude_Backend_Developer_Resu.pdf"
+              >
+                Download Resume
+              </Button>
             </div>
           </div>
         </section>

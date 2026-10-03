@@ -5,7 +5,7 @@ export const socials = {
   email: "clevermike02@gmail.com",
   github: "https://github.com/mikky00B",
   githubHandle: "mikky00B",
-  linkedin: "https://www.linkedin.com/",
-  twitter: "https://x.com/",
-  resume: "/resume/michael-abulude-resume.pdf"
+  linkedin: "https://www.linkedin.com/in/clevermike02/",
+  twitter: "https://x.com/Clever00__",
+  resume: "/resume/Michael_Abulude_Backend_Developer_Resu.pdf"
 };

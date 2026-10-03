@@ -21,6 +21,45 @@ export type Project = {
 
 export const projects: Project[] = [
   {
+    slug: "deploydock",
+    title: "DeployDock",
+    description:
+      "A self-hosted deployment control panel for VPS apps: one-click deploys, streamed logs, service restarts, and rollbacks over an SSH bridge or a Go agent.",
+    category: "DevOps / Backend / Developer Tools",
+    status: "Live",
+    stack: ["FastAPI", "PostgreSQL", "React", "Vite", "Go", "Docker"],
+    challenge:
+      "Automating deployments on servers people already run, without forcing a new runtime — while keeping SSH access pinned and audited, secrets encrypted, and every release health-gated before traffic switches.",
+    githubUrl: "https://github.com/mikky00B/DeployDock",
+    caseStudyUrl: "/projects/deploydock",
+    featured: true,
+    summary:
+      "DeployDock is a self-hosted deployment control panel for developers and small teams already running apps on VPS servers. It automates the workflow you already have — connect servers, register apps, run one-click deploys, stream logs, restart services, and roll back failed releases — through an on-demand SSH bridge or an outbound-only Go agent that health-checks each new container before switching traffic.",
+    focus: "Deployment automation, secure server access, release pipeline state",
+    architecture: [
+      "React Dashboard",
+      "FastAPI Control Plane",
+      "PostgreSQL State + Audit Trail",
+      "SSH Bridge (on-demand)",
+      "Go Agent (outbound-only)",
+      "Docker Health-Gated Releases",
+      "Existing systemd / nginx Apps"
+    ],
+    features: [
+      "One-click deploys with a 12-state pipeline and one-click rollback",
+      "Two execution paths: on-demand SSH bridge or outbound-only Go agent",
+      "Live deployment log streaming over SSE",
+      "GitHub webhooks that auto-deploy and queue behind an active release",
+      "SSH keys and environment variables encrypted at rest with rotatable key ids",
+      "Agent registration with heartbeats and a command queue for agent-driven deploys"
+    ],
+    lessons: [
+      "Automating a workflow people already trust beats asking them to migrate to a new runtime.",
+      "Deployments need an explicit state pipeline, not just streamed command output.",
+      "Health-gated traffic switches make rollback boring, and boring is the goal for releases."
+    ]
+  },
+  {
     slug: "swindle",
     title: "Swindle",
     description:
@@ -62,11 +101,11 @@ export const projects: Project[] = [
     description:
       "A chess platform first, with optional competitive and Web3 modes layered onto the core realtime game experience.",
     category: "Web3 / Backend / Realtime",
-    status: "In Progress",
+    status: "Archived",
     stack: ["FastAPI", "React", "Redis", "Vyper", "chess.js", "react-chessboard"],
     challenge:
       "Combining smart contract escrow, backend signing, game state, and delayed payout logic.",
-    githubUrl: "https://github.com/mikky00B",
+    githubUrl: "https://github.com/mikky00B/Chess-Arena",
     caseStudyUrl: "/projects/chess-arena",
     featured: false,
     summary:
@@ -141,7 +180,7 @@ export const projects: Project[] = [
     stack: ["FastAPI", "React"],
     challenge: "Designing async checks, scheduler workers, incident tracking, and alert delivery.",
     liveUrl: "https://watchdog.clevermike.studio",
-    githubUrl: "https://github.com/mikky00B",
+    githubUrl: "https://github.com/mikky00B/WATCHDOG",
     caseStudyUrl: "/projects/watchdog",
     featured: true,
     summary:
@@ -177,7 +216,7 @@ export const projects: Project[] = [
     status: "Archived",
     stack: ["React", "Ethers", "Blockchain RPC APIs"],
     challenge: "Reading wallet allowances and creating a clean interface for safer Web3 usage.",
-    githubUrl: "https://github.com/mikky00B",
+    githubUrl: "https://github.com/mikky00B/CScan",
     caseStudyUrl: "/projects/token-approval-scanner",
     featured: false,
     summary:

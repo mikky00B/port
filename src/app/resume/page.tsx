@@ -21,7 +21,9 @@ export default function ResumePage() {
           title="Michael Abulude"
           description="Backend-focused fullstack developer with experience building APIs, monitoring systems, fullstack web applications, Web3 tools, and production-ready backend services using Python, FastAPI, Django, React, PostgreSQL, and Linux deployment tools."
         />
-        <Button href={socials.resume}>Download PDF</Button>
+        <Button href={socials.resume} download="Michael_Abulude_Backend_Developer_Resu.pdf">
+          Download PDF
+        </Button>
       </div>
 
       <div className="mt-10 grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">

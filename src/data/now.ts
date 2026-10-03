@@ -6,25 +6,26 @@ export type NowItem = {
 export const nowItems: NowItem[] = [
   {
     title: "Currently Building",
-    items: [
-      "WATCHDOG alert improvements",
-      "DeployDock — a self-hosted deployment control panel for developers and small teams already running apps on VPS servers"
-    ]
+    items: ["WATCHDOG alert improvements"]
   },
   {
     title: "Currently Learning",
-    items: ["Go backend development", "API gateway architecture", "Advanced React/Tailwind UI patterns"]
+    items: ["Go backend development", "API gateway architecture"]
   },
   {
     title: "Current Focus",
-    items: ["Backend systems", "Monitoring platforms", "Developer tools", "Standalone blog app planning"]
+    items: ["Backend systems", "Monitoring platforms", "Developer tools"]
   },
   {
     title: "Recent Wins",
-    items: ["Shipped monitoring project foundations", "Built several backend/fullstack project demos", "Expanded Web3 contract experiments"]
+    items: [
+      "Shipped DeployDock, a self-hosted deployment control panel",
+      "Launched Swindle, a chess storytelling app",
+      "Released Gatekeeper, a self-hosted API gateway"
+    ]
   },
   {
     title: "Next Goals",
-    items: ["Publish deeper project case studies", "Improve WATCHDOG alerts", "Build a standalone blog app"]
+    items: ["Publish deeper project case studies", "Build a standalone blog app"]
   }
 ];

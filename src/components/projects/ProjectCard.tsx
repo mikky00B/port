@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, Github } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Github } from "lucide-react";
 import { Project } from "@/data/projects";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -36,6 +36,12 @@ export function ProjectCard({ project }: { project: Project }) {
             GitHub <Github className="h-4 w-4" />
           </Link>
         ) : null}
+        <Link
+          className="focus-ring inline-flex items-center gap-1 rounded-md border border-line px-3 py-2 text-sm font-semibold text-muted hover:border-accent hover:text-text"
+          href={project.caseStudyUrl}
+        >
+          Case study <ArrowRight className="h-4 w-4" />
+        </Link>
       </div>
     </Card>
   );

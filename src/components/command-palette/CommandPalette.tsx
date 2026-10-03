@@ -84,12 +84,12 @@ export function CommandPalette() {
           {filtered.map((command) => (
             <button
               key={`${command.label}-${command.href}`}
-              className="focus-ring flex w-full items-center justify-between rounded-md px-3 py-3 text-left hover:bg-panel2"
+              className="focus-ring flex w-full items-center justify-between gap-4 rounded-md px-3 py-3 text-left hover:bg-panel2"
               type="button"
               onClick={() => run(command)}
             >
               <span className="font-medium text-text">{command.label}</span>
-              <span className="text-xs text-dim">{command.detail}</span>
+              <span className="min-w-0 truncate text-xs text-dim">{command.detail}</span>
             </button>
           ))}
           {filtered.length === 0 ? <p className="px-3 py-8 text-center text-sm text-muted">No matching command.</p> : null}

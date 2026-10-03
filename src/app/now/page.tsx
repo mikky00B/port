@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { UpdatedStamp } from "@/components/now/UpdatedStamp";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -16,8 +17,9 @@ export default function NowPage() {
       <SectionHeader
         eyebrow="Now"
         title="Current focus board."
-        description="A public status board for what I am building, learning, and improving right now. Updated for May 31, 2026."
+        description="A public status board for what I am building, learning, and improving right now."
       />
+      <UpdatedStamp />
       <div className="mt-10 grid gap-5 md:grid-cols-2">
         {nowItems.map((section) => (
           <Card key={section.title}>

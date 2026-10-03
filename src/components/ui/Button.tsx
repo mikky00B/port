@@ -6,6 +6,7 @@ type ButtonProps = {
   children: React.ReactNode;
   variant?: "primary" | "secondary" | "ghost";
   className?: string;
+  download?: string;
 };
 
 const variants = {
@@ -14,7 +15,7 @@ const variants = {
   ghost: "border-transparent bg-transparent text-muted hover:text-text"
 };
 
-export function Button({ href, children, variant = "primary", className }: ButtonProps) {
+export function Button({ href, children, variant = "primary", className, download }: ButtonProps) {
   const classes = cn(
     "focus-ring inline-flex min-h-11 items-center justify-center rounded-md border px-4 py-2 text-sm font-semibold transition",
     variants[variant],
@@ -22,6 +23,14 @@ export function Button({ href, children, variant = "primary", className }: Butto
   );
 
   if (href) {
+    if (download) {
+      return (
+        <a className={classes} href={href} download={download}>
+          {children}
+        </a>
+      );
+    }
+
     return (
       <Link className={classes} href={href}>
         {children}
