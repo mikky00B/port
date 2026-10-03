@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ArchitectureDiagram } from "@/components/projects/ArchitectureDiagram";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
-import { SectionHeader } from "@/components/ui/SectionHeader";
 import { getProject, projects } from "@/data/projects";
 
 export function generateStaticParams() {
@@ -53,9 +51,8 @@ export default async function ProjectCaseStudyPage({ params }: ProjectRouteProps
         <p className="mt-5 text-lg leading-8 text-muted">{project.summary}</p>
       </div>
 
-      <div className="mt-10 grid gap-5 md:grid-cols-4">
+      <div className="mt-10 grid gap-5 md:grid-cols-3">
         {[
-          ["Role", "Fullstack Developer"],
           ["Timeline", "Personal project"],
           ["Focus", project.focus],
           ["Category", project.category]
@@ -65,23 +62,6 @@ export default async function ProjectCaseStudyPage({ params }: ProjectRouteProps
             <p className="mt-3 text-sm font-medium leading-6 text-text">{value}</p>
           </Card>
         ))}
-      </div>
-
-      <div className="mt-16 grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="space-y-8">
-          <section>
-            <SectionHeader eyebrow="Solution" title="A focused, system-first implementation." />
-            <p className="mt-4 leading-8 text-muted">
-              The project turns the core problem into clear services, explicit data flows, and a dashboard that makes operational state easy to inspect.
-            </p>
-          </section>
-        </div>
-        <section>
-          <SectionHeader eyebrow="Architecture" title="System flow." />
-          <div className="mt-6">
-            <ArchitectureDiagram items={project.architecture} />
-          </div>
-        </section>
       </div>
 
       <div className="mt-16 grid gap-5 lg:grid-cols-2">

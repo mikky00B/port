@@ -60,6 +60,43 @@ export const projects: Project[] = [
     ]
   },
   {
+    slug: "watchdog",
+    title: "WATCHDOG",
+    description:
+      "A monitoring platform for uptime checks, API health checks, cron-job heartbeats, incidents, and alerts.",
+    category: "Monitoring / Backend / SaaS",
+    status: "Live",
+    stack: ["FastAPI", "React"],
+    challenge: "Designing async checks, scheduler workers, incident tracking, and alert delivery.",
+    liveUrl: "https://watchdog.clevermike.studio",
+    githubUrl: "https://github.com/mikky00B/WATCHDOG",
+    caseStudyUrl: "/projects/watchdog",
+    featured: true,
+    summary:
+      "WATCHDOG is an uptime, API, and cron-job monitoring platform for small agencies and backend teams, with alerting, check history, incidents, and branded status pages.",
+    focus: "Backend architecture, monitoring, alerting",
+    architecture: [
+      "User Dashboard",
+      "FastAPI Backend",
+      "Monitor Scheduler",
+      "Checker Service",
+      "Check Results / Incidents",
+      "Alert Service",
+      "Email / Telegram / WhatsApp"
+    ],
+    features: [
+      "Uptime and API endpoint checks",
+      "Cron-job heartbeat tracking",
+      "Incident history and status pages",
+      "Alert delivery workflow"
+    ],
+    lessons: [
+      "Reliable monitoring depends on careful background scheduling.",
+      "Incident state needs a clear model, not just raw check logs.",
+      "Operational tools work best when status is visible at a glance."
+    ]
+  },
+  {
     slug: "swindle",
     title: "Swindle",
     description:
@@ -168,43 +205,6 @@ export const projects: Project[] = [
       "Gateway behavior needs clear config boundaries and predictable reload semantics.",
       "Traffic control features work best when authentication, rate limits, and upstream health share a simple request flow.",
       "Operational APIs need visibility through logs, analytics, and a dashboard, not just proxy behavior."
-    ]
-  },
-  {
-    slug: "watchdog",
-    title: "WATCHDOG",
-    description:
-      "A monitoring platform for uptime checks, API health checks, cron-job heartbeats, incidents, and alerts.",
-    category: "Monitoring / Backend / SaaS",
-    status: "Live",
-    stack: ["FastAPI", "React"],
-    challenge: "Designing async checks, scheduler workers, incident tracking, and alert delivery.",
-    liveUrl: "https://watchdog.clevermike.studio",
-    githubUrl: "https://github.com/mikky00B/WATCHDOG",
-    caseStudyUrl: "/projects/watchdog",
-    featured: true,
-    summary:
-      "WATCHDOG is an uptime, API, and cron-job monitoring platform for small agencies and backend teams, with alerting, check history, incidents, and branded status pages.",
-    focus: "Backend architecture, monitoring, alerting",
-    architecture: [
-      "User Dashboard",
-      "FastAPI Backend",
-      "Monitor Scheduler",
-      "Checker Service",
-      "Check Results / Incidents",
-      "Alert Service",
-      "Email / Telegram / WhatsApp"
-    ],
-    features: [
-      "Uptime and API endpoint checks",
-      "Cron-job heartbeat tracking",
-      "Incident history and status pages",
-      "Alert delivery workflow"
-    ],
-    lessons: [
-      "Reliable monitoring depends on careful background scheduling.",
-      "Incident state needs a clear model, not just raw check logs.",
-      "Operational tools work best when status is visible at a glance."
     ]
   },
   {
