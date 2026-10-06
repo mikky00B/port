@@ -60,9 +60,10 @@ function mount({ stage, svg, read }, value) {
   framePiece(0, 0, RL, 44, 2, 0, ZT);
   framePiece(BX1, 0, BX1 + RL, 44, 2, 0, ZT);
 
-  /** Tray i (0 is the top one): its solid, handle, vents and LED. */
+  /** Tray i (0 is the top one): its solid, handle, vents and LED.
+   *  Painted bottom-first, top-last: a slid tray hangs over the trays below it. */
   const trays = [];
-  for (let i = 0; i < N; i++) {
+  for (let i = N - 1; i >= 0; i--) {
     const grp = mk("g", {}, g);
     const sl = solid(grp);
     const handle = mk("path", { class: "nf" }, grp);

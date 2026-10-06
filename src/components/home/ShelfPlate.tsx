@@ -10,9 +10,17 @@ function projectForSlug(slug: string): Project | null {
   return getProject(slug) ?? null;
 }
 
+// bump V whenever public/hairline-shelf.html changes, so browsers fetch the new figure
+const SHELF_V = "3";
+
 export function ShelfPlate() {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [active, setActive] = useState<Project | null>(null);
+  const [touch, setTouch] = useState(false);
+
+  useEffect(() => {
+    setTouch(window.matchMedia("(hover: none)").matches);
+  }, []);
 
   function wire() {
     const frame = frameRef.current;
@@ -37,7 +45,11 @@ export function ShelfPlate() {
       characterData: true,
       subtree: true,
     });
+    // on touch there is no hover preview, so a tap must not navigate blindly;
+    // dragging browses the trays and the caption link below opens the project
+    const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
     doc.addEventListener("click", () => {
+      if (!canHover) return;
       const slug = (read.textContent ?? "").trim();
       const project = slug && slug !== "rest" ? projectForSlug(slug) : null;
       const url = project?.liveUrl ?? project?.githubUrl;
@@ -54,17 +66,17 @@ export function ShelfPlate() {
   const slot = active ? SHELF.findIndex((p) => p.slug === active.slug) + 1 : 0;
 
   return (
-    <figure className="rounded-lg border border-line bg-panel/90 p-4 shadow-glow backdrop-blur">
+    <figure className="rounded-lg border border-line bg-panel/90 p-3 shadow-glow backdrop-blur sm:p-4">
       <figcaption className="flex items-center justify-between px-1 pb-3 font-mono text-xs uppercase tracking-[0.18em] text-dim">
         <span>Fig 1</span>
         <span>Project shelf</span>
       </figcaption>
       <iframe
         ref={frameRef}
-        src="/hairline-shelf.html?theme=dark&w=460"
-        title="Interactive index of Michael's projects: seven trays on a shelf, one per project"
+        src={`/hairline-shelf.html?theme=dark&w=460&v=${SHELF_V}`}
+        title="Interactive index of Michael's projects: trays on a shelf, one per project"
         onLoad={wire}
-        className="h-[420px] w-full rounded-md border border-line bg-black"
+        className="h-[320px] w-full rounded-md border border-line bg-black sm:h-[420px]"
       />
       <figcaption
         className="flex items-center justify-between gap-4 px-1 pt-3 font-mono text-xs text-dim"
@@ -75,7 +87,7 @@ export function ShelfPlate() {
             {active.title} · {active.status} ↗
           </a>
         ) : (
-          <span>hover a tray · click to open</span>
+          <span>{touch ? "drag across the trays" : "hover a tray · click to open"}</span>
         )}
         <span className="shrink-0">
           {active
