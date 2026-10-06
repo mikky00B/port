@@ -1,4 +1,5 @@
 import { ProjectCard } from "@/components/projects/ProjectCard";
+import { ShelfPlate } from "@/components/home/ShelfPlate";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
@@ -14,27 +15,34 @@ export default function HomePage() {
   return (
     <div className="dashboard-grid">
       <Container>
-        <section className="flex min-h-[calc(100vh-4rem)] items-center py-16">
-          <div>
-            <h1 className="mt-6 font-heading text-5xl font-semibold tracking-tight text-text sm:text-6xl">
-              Michael Abulude
-            </h1>
-            <p className="mt-4 text-xl font-medium text-accent">Backend-Focused Software Developer</p>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-muted">
-              I build scalable APIs, monitoring tools, automation systems, and practical web systems using Python and Go.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button href="/#projects">View Projects</Button>
-              <Button href="/contact" variant="secondary">Contact Me</Button>
-              <Button
-                href={socials.resume}
-                variant="ghost"
-                download="Michael_Abulude_Backend_Developer_Resu.pdf"
-              >
-                Download Resume
-              </Button>
+        <section className="relative flex min-h-[calc(100vh-4rem)] items-center py-16">
+          <div className="grid w-full items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
+            <div>
+              <p className="font-mono text-xs uppercase tracking-[0.22em] text-dim">clevermike.studio</p>
+              <h1 className="mt-3 font-heading text-5xl font-semibold tracking-tight text-text sm:text-6xl">
+                Michael Abulude
+              </h1>
+              <p className="mt-4 text-xl font-medium text-accent">Backend-Focused Software Developer</p>
+              <p className="mt-6 max-w-xl text-lg leading-8 text-muted">
+                I build scalable APIs, monitoring tools, automation systems, and practical web systems using Python and Go.
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Button href="/#projects">View Projects</Button>
+                <Button href="/contact" variant="secondary">Contact Me</Button>
+                <Button
+                  href={socials.resume}
+                  variant="ghost"
+                  download="Michael_Abulude_Backend_Developer_Resu.pdf"
+                >
+                  Download Resume
+                </Button>
+              </div>
             </div>
+            <ShelfPlate />
           </div>
+          <span className="absolute bottom-2 left-0 font-mono text-xs uppercase tracking-[0.22em] text-dim">
+            scroll ↓
+          </span>
         </section>
 
         <section id="projects" className="scroll-mt-24 py-16">

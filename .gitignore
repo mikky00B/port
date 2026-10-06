@@ -42,3 +42,7 @@ Thumbs.db
 # Deployment and local tooling
 .vercel/
 .netlify/
+
+# hairline figure build artifacts (regenerate: node <skill>/build.mjs shelf.js)
+/hairline-shelf.html
+/hairline-shelf-*.png
