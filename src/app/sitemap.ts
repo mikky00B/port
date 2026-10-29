@@ -5,7 +5,7 @@ import { getAllPosts, getAllTags } from "@/lib/posts";
 const SITE = "https://clevermike.studio";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const staticRoutes = ["", "/about", "/blog", "/contact", "/lab", "/now", "/resume"].map((route) => ({
+  const staticRoutes = ["", "/about", "/blog", "/contact", "/lab", "/resume"].map((route) => ({
     url: `${SITE}${route}`,
     changeFrequency: "monthly" as const,
     priority: route === "" ? 1 : 0.6
