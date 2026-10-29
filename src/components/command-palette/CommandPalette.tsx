@@ -6,6 +6,12 @@ import { useRouter } from "next/navigation";
 import { projects } from "@/data/projects";
 import { socials } from "@/data/socials";
 
+export type PalettePost = {
+  slug: string;
+  title: string;
+  tags: string[];
+};
+
 type Command = {
   label: string;
   detail: string;
@@ -13,7 +19,7 @@ type Command = {
   external?: boolean;
 };
 
-export function CommandPalette() {
+export function CommandPalette({ posts }: { posts: PalettePost[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -21,6 +27,7 @@ export function CommandPalette() {
   const commands = useMemo<Command[]>(
     () => [
       { label: "Go to projects", detail: "Landing page project list", href: "/#projects" },
+      { label: "Go to blog", detail: "Latest writing", href: "/blog" },
       { label: "Go to resume", detail: "Profile and skills", href: "/resume" },
       { label: "Go to contact", detail: "Email and links", href: "/contact" },
       { label: "Open GitHub", detail: socials.githubHandle, href: socials.github, external: true },
@@ -29,9 +36,14 @@ export function CommandPalette() {
         detail: project.category,
         href: project.liveUrl ?? project.githubUrl ?? "/#projects",
         external: Boolean(project.liveUrl ?? project.githubUrl)
+      })),
+      ...posts.map((post) => ({
+        label: post.title,
+        detail: post.tags.length > 0 ? post.tags.map((tag) => `#${tag}`).join(" ") : "Blog post",
+        href: `/blog/${post.slug}`
       }))
     ],
-    []
+    [posts]
   );
 
   const filtered = commands.filter((command) =>

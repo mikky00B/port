@@ -1,5 +1,6 @@
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { ShelfPlate } from "@/components/home/ShelfPlate";
+import { PostCard } from "@/components/blog/PostCard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
@@ -8,9 +9,12 @@ import { StatusDot } from "@/components/ui/StatusDot";
 import { nowItems } from "@/data/now";
 import { projects } from "@/data/projects";
 import { socials } from "@/data/socials";
+import { getAllPosts } from "@/lib/posts";
+import Link from "next/link";
 
 export default function HomePage() {
   const nowBuilding = nowItems[0].items;
+  const latestPosts = getAllPosts().slice(0, 3);
 
   return (
     <div className="dashboard-grid">
@@ -56,6 +60,25 @@ export default function HomePage() {
             ))}
           </div>
         </section>
+
+        {latestPosts.length > 0 ? (
+          <section className="py-16">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <SectionHeader eyebrow="Writing" title="Recent notes." />
+              <Link
+                className="focus-ring rounded font-mono text-xs uppercase tracking-[0.18em] text-dim transition hover:text-text"
+                href="/blog"
+              >
+                All posts →
+              </Link>
+            </div>
+            <div className="mt-8 grid gap-5">
+              {latestPosts.map((post) => (
+                <PostCard key={post.slug} post={post} />
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <section className="py-16">
           <Card>

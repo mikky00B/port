@@ -1,0 +1,83 @@
+---
+title: "A deploy is a state machine, not a command"
+description: "Why DeployDock tracks explicit release states instead of streaming shell output, and what health-gated cutover actually buys you."
+date: 2026-10-20
+tags: [deployments, architecture, go]
+project: deploydock
+draft: false
+---
+
+Most self-hosted deployment tools are a thin wrapper around a shell command. You press deploy, an SSH session opens, `git pull && docker compose up -d` streams into a log pane, and the button turns green when the last line arrives. It works right up until the line that says `error` scrolls past at 200 lines per second and nobody notices for twenty minutes.
+
+The fix is not a better log viewer. It is admitting that a release has states, and that the log is an output of the state machine rather than the thing itself.
+
+## Twelve states, one source of truth
+
+DeployDock models a release as a pipeline of explicit states. Each transition is recorded, so "what is happening right now" is a query rather than an inference from the tail of a log.
+
+That sounds like ceremony, and in a toy project it is. On a real box it buys three things immediately:
+
+- The UI can show a stuck release as stuck, instead of spinning forever
+- A new deploy can be queued behind an active one instead of racing it
+- Rollback knows exactly which artifact to return to, because the state that produced it was written down
+
+The last point is the one people underestimate. A log tells you what happened. A state record tells you what is true now, which is the only thing a rollback can act on.
+
+## Two ways into the same pipeline
+
+DeployDock deliberately supports two execution paths over one state machine:
+
+<ArchitectureDiagram
+  items={[
+    "Dashboard request",
+    "Control plane state transition",
+    "SSH bridge (on-demand)",
+    "Go agent (outbound-only)",
+    "Docker health-gated release",
+    "Traffic switch or rollback"
+  ]}
+/>
+
+The SSH bridge is the low-friction path. Nothing needs to be installed on the server, access is pinned, and the connection exists only for the duration of the operation.
+
+The Go agent is the path for servers that cannot accept inbound SSH from a control plane at all. It dials out, registers, sends heartbeats, and pulls work from a command queue. The control plane never initiates a connection.
+
+Both paths converge on the same state transitions. The transport is a detail; the pipeline is the contract. That separation is what makes it possible to add a third execution path later without rewriting the release logic.
+
+## Health gate before traffic
+
+The single most valuable decision in the project is that a new container must prove it is healthy before it receives traffic. Not "the process started" — healthy on its own terms, with a real check.
+
+```bash
+# the shape of a gated release, roughly
+docker compose up -d --no-deps app-next
+until curl -fsS http://127.0.0.1:8008/health; do
+  sleep 2
+  attempts=$((attempts + 1))
+  [ "$attempts" -gt 15 ] && break
+done
+```
+
+If the health check never passes, the release fails in place. The old container is still serving, nothing was switched, and the blast radius is one exited container and one red row in the dashboard. The deploy was allowed to fail, which is the entire point.
+
+Rollback then becomes boring: point traffic at the previous healthy artifact and mark the release rolled back. Boring is the goal. Releases should be the least interesting thing that happens to a server.
+
+## The queue nobody asks for
+
+GitHub webhooks are the feature that turns a good pipeline into a reliable one, and it is almost entirely about saying no.
+
+When a push arrives while a release is running, the control plane does not start a second deploy. It records the request and queues it behind the active release. Two releases competing for the same container name is how you get partially applied states that nobody can reconstruct afterwards.
+
+Serialization is not a limitation. It is the feature. The queue is what makes "deploy on push" safe enough to leave switched on.
+
+## What I would do differently
+
+Two things.
+
+First, secrets. They are encrypted at rest with rotatable key ids, which is correct, but the rotation story was designed after the first version shipped. Key ids should have been in the schema from the first commit, because retrofitting them means touching every row that holds a secret.
+
+Second, I would have modeled the agent command queue with the same rigor as the release pipeline. It has states, but they are less explicit than the release states, and that asymmetry shows when debugging an agent that went quiet mid-command.
+
+## The takeaway
+
+If you are building anything that changes the state of a running system, write the states down before you write the shell command. The command is easy. Knowing what is true after it runs, and how to get back, is the actual engineering.

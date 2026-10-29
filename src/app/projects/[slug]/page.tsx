@@ -4,7 +4,9 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
+import { PostCard } from "@/components/blog/PostCard";
 import { getProject, projects } from "@/data/projects";
+import { getPostsForProject } from "@/lib/posts";
 
 export function generateStaticParams() {
   return projects
@@ -44,6 +46,8 @@ export default async function ProjectCaseStudyPage({ params }: ProjectRouteProps
   if (!project?.caseStudyUrl) {
     notFound();
   }
+
+  const writeUps = getPostsForProject(project.slug);
 
   return (
     <Container className="py-16">
@@ -99,6 +103,17 @@ export default async function ProjectCaseStudyPage({ params }: ProjectRouteProps
           </div>
         </div>
       </Card>
+
+      {writeUps.length > 0 ? (
+        <section className="mt-16">
+          <h2 className="font-heading text-xl font-semibold text-text">Write-ups</h2>
+          <div className="mt-5 grid gap-5">
+            {writeUps.map((post) => (
+              <PostCard key={post.slug} post={post} />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <div className="mt-10 flex flex-wrap gap-3">
         {project.liveUrl ? <Button href={project.liveUrl}>Live Site</Button> : null}
