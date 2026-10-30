@@ -1,0 +1,150 @@
+---
+title: "Inside Termii: from API call to delivered SMS"
+description: "A deep dive into the architecture behind messaging platforms like Termii: aggregators, SMSCs, queues, workers, backpressure, and why an API acknowledgement is not a delivery receipt."
+date: 2026-10-30
+tags: [termii, architecture, messaging, distributed-systems]
+draft: false
+---
+
+Most backend tutorials stop at the HTTP response. This post goes past it, using Termii, a messaging API African fintechs rely on for OTPs and notifications, as the case study. What happens between an API call and a phone buzzing is a masterclass in distributed systems design that has nothing to do with SMS itself.
+
+Start with the sentence that reframes everything:
+
+> An API acknowledgement means someone accepted your work. It is not proof the work happened.
+
+If you have only ever built request/response apps, where the client calls your endpoint and you answer, this distinction is where distributed systems start.
+
+## One OTP, four companies
+
+Say a fintech called QuickBank needs to send a password-reset OTP. The message travels through four hands:
+
+<FlowDiagram
+  steps={["QuickBank (fintech app)", "Termii (messaging API)", "Telecom operator / SMSC", "Customer's phone"]}
+  caption="One integration for the business, many carriers behind the scenes."
+/>
+
+That third link is the whole business. Every operator has its own connectivity requirements, its own regulations, its own quirks, and every country has more operators. A messaging platform exists so QuickBank integrates once instead of negotiating with every carrier on earth. It is an abstraction with a billing account attached.
+
+Under the hood, providers talk to operator SMS centres using a protocol called SMPP. An SMSC is essentially the operator's post office for text messages: it accepts, queues, and routes SMS toward devices. You do not need to speak SMPP to build on top of a messaging API, but knowing it exists changes how you reason about latency and failures two hops away.
+
+One honest caveat: how any platform actually wires its carrier connections is private. What is public (from Termii's developer docs) is that messages get unique IDs, delivery reports arrive via webhooks or polling, there is an auto-failover API that cascades a message across WhatsApp, SMS, email, and voice, and there are regional base URLs. The rest of this post is industry-standard architecture used to explain the space, not a leak of anyone's source code.
+
+## The synchronous trap
+
+Here is the version of an SMS endpoint most of us would write first:
+
+```python
+@app.post("/send-sms")
+async def send_sms(payload: SMSRequest):
+    response = await provider.send(payload.phone, payload.message)
+    return {"status": "submitted", "provider_response": response}
+```
+
+It works. Then three fintechs hammer it with 50,000 requests in ten seconds, the provider takes three seconds per submission, and suddenly every API connection is held open for seconds, waiting on a downstream system.
+
+<FlowDiagram
+  steps={["Client", "API server", "Provider (slow)", "Response"]}
+  highlight={[2, 3]}
+  caption="Synchronous: the client holds the connection open through every hop. async/await does not change that."
+/>
+
+The fix is not a faster provider call. It is refusing to do the slow work inside the request at all.
+
+## Accept the work, then do the work
+
+An asynchronously designed platform splits the moment it accepts a message from the moment it sends one:
+
+<ArchitectureDiagram
+  items={[
+    "Client API request",
+    "Authenticate, validate, check balance",
+    "Persist message and assign an ID",
+    "Message queue (buffer pending work)",
+    "Background workers pull and submit",
+    "Provider adapters toward carriers",
+    "Delivery report via webhook or polling"
+  ]}
+/>
+
+The API validates the request, stores the message, enqueues it, and answers immediately:
+
+```json
+{
+  "message_id": "msg_8f21a",
+  "status": "queued"
+}
+```
+
+`queued` means the platform has accepted responsibility for the message. It does not mean the phone buzzed. The restaurant analogy holds: the waiter takes your order (the API response), the kitchen cooks at its own pace (workers), and the two rates are allowed to be different. That separation is the entire feature.
+
+## Backpressure is the system telling the truth
+
+Now run the arithmetic that decides whether the system survives a spike.
+
+<RateBars
+  rows={[
+    { label: "Incoming traffic", value: 5000, display: "5,000 msg/s" },
+    { label: "Provider capacity", value: 1000, display: "1,000 msg/s" },
+    { label: "Backlog growth", value: 4000, display: "+4,000 msg/s" }
+  ]}
+  caption="50,000 requests in 10 seconds against a 1,000-per-second door. After one minute of that gap: 240,000 pending messages."
+/>
+
+The queue absorbs the spike, but it cannot create throughput. Every second of that gap adds 4,000 messages to the backlog, and your "queued" response was a promise the system is now falling behind on.
+
+The junior instinct is to add more workers. Sit with why that fails: if the carrier is the bottleneck, more workers just open more connections that compete for the same 1,000-per-second door. You have made the system more complex, not faster. That is backpressure, a downstream limit propagating upstream, and the honest responses are:
+
+- Rate-limit submissions per provider, with token-bucket-style bursts where their limits allow
+- Prioritize traffic: an OTP beats a marketing blast
+- Throttle or reject intake you cannot realistically process
+- Monitor queue age, not just queue length. 100 messages waiting 90 seconds is worse than 10,000 waiting 2 seconds.
+
+Adding workers only helps when the workers were the bottleneck. Knowing which layer is actually full is the skill.
+
+## Workers die mid-flight
+
+A worker pulls message MSG-002, starts talking to the provider, and the process crashes. What now?
+
+Reliable queues build recovery in:
+
+- **Acknowledgements.** A worker ACKs a message only after finishing its processing step. Crash before the ACK, and the broker makes the message available again.
+- **Retries with backoff.** Temporary failures get retried on a schedule that backs off, shown below.
+- **Maximum attempts.** Retrying forever is not resilience; it is a loop.
+- **Dead letter queues.** Messages that keep failing get parked somewhere a human can inspect them, instead of clogging the pipeline.
+- **Temporary vs permanent.** A network timeout deserves a retry. An invalid phone number deserves a failure state. Confusing the two burns money.
+
+<RateBars
+  rows={[
+    { label: "attempt 1", value: 2, display: "wait 2s" },
+    { label: "attempt 2", value: 4, display: "wait 4s" },
+    { label: "attempt 3", value: 8, display: "wait 8s" },
+    { label: "attempt 4", value: 16, display: "wait 16s" }
+  ]}
+  caption="Exponential backoff: every failure buys the system a little breathing room."
+/>
+
+## The duplicate nobody warned you about
+
+Here is the subtle one, the failure mode most queue tutorials skip, and it deserves its own section.
+
+A worker submits the SMS to the provider successfully, and the message is genuinely on its way. Then it crashes before acknowledging the queue message. The broker, doing exactly what it should, redelivers the task. Another worker sends the same SMS. The customer gets two OTPs, and one of them was never authorized by anyone.
+
+Redelivery guarantees at-least-once processing, which means duplicates are normal, expected, and your problem to handle. The usual answer is idempotency: give every message a unique ID and make repeated submissions of the same ID harmless. There is a cousin of this problem too: saving the message to PostgreSQL and publishing it to Redis are two separate operations, and one can succeed while the other fails. The transactional outbox pattern exists for exactly that gap. Both deserve their own post.
+
+## Build the smallest version
+
+Reading about queues teaches you the vocabulary. Building one teaches you the failure modes. A genuinely good first project:
+
+- FastAPI for the API
+- PostgreSQL for message persistence and state
+- Redis with Celery for queueing and workers
+- Simulated "carriers" with configurable latency, failure rates, and throughput limits
+- One adapter interface so fake and real providers are interchangeable
+
+Once that runs, break it on purpose: kill a worker mid-flight, cap the fake carrier at 10 requests per second, flood the API. Watch the backlog age. No diagram can teach you that.
+
+## The takeaway
+
+An acknowledgement is the beginning of a promise, not the proof of it. APIs that accept work and systems that finish work are different components with different failure modes. The machinery in between, from queues and retries to dedup and delivery reports, is where the real engineering lives.
+
+The next time your endpoint returns `200 OK` for something slow or external, ask the question this architecture exists to answer: did I just finish the work, or did I just promise it?
