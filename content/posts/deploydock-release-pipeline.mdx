@@ -70,14 +70,6 @@ When a push arrives while a release is running, the control plane does not start
 
 Serialization is not a limitation. It is the feature. The queue is what makes "deploy on push" safe enough to leave switched on.
 
-## What I would do differently
-
-Two things.
-
-First, secrets. They are encrypted at rest with rotatable key ids, which is correct, but the rotation story was designed after the first version shipped. Key ids should have been in the schema from the first commit, because retrofitting them means touching every row that holds a secret.
-
-Second, I would have modeled the agent command queue with the same rigor as the release pipeline. It has states, but they are less explicit than the release states, and that asymmetry shows when debugging an agent that went quiet mid-command.
-
 ## The takeaway
 
 If you are building anything that changes the state of a running system, write the states down before you write the shell command. The command is easy. Knowing what is true after it runs, and how to get back, is the actual engineering.
