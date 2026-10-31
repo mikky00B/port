@@ -25,6 +25,8 @@ export type PostSummary = {
   tags: string[];
   draft: boolean;
   project?: string;
+  series?: string;
+  seriesOrder?: number;
   readingTime: number;
 };
 
@@ -86,6 +88,26 @@ function readProject(value: unknown, file: string): string | undefined {
     fail(file, `"project" refers to unknown project "${slug}"`);
   }
   return slug;
+}
+
+function readSeries(value: unknown, file: string): string | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value !== "string" || value.trim() === "") {
+    fail(file, '"series" must be a non-empty string');
+  }
+  return value.trim();
+}
+
+function readSeriesOrder(value: unknown, file: string): number | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 1) {
+    fail(file, '"seriesOrder" must be a positive integer');
+  }
+  return value;
 }
 
 function stripInlineMarkdown(text: string): string {
@@ -158,6 +180,12 @@ function readPostFile(file: string): Post {
     fail(file, '"draft" must be true or false');
   }
 
+  const series = readSeries(data.series, file);
+  const seriesOrder = readSeriesOrder(data.seriesOrder, file);
+  if ((series === undefined) !== (seriesOrder === undefined)) {
+    fail(file, '"series" and "seriesOrder" must be set together');
+  }
+
   return {
     slug,
     title: readString(data.title, file, "title"),
@@ -166,6 +194,8 @@ function readPostFile(file: string): Post {
     tags: readTags(data.tags, file),
     draft,
     project: readProject(data.project, file),
+    series,
+    seriesOrder,
     readingTime: readingTime(content),
     content,
     toc: buildToc(content)
@@ -188,7 +218,12 @@ export function getAllPosts(): Post[] {
     .filter((file) => file.endsWith(".mdx"))
     .map(readPostFile)
     .filter((post) => IS_DEV || !post.draft)
-    .sort((a, b) => b.date.localeCompare(a.date));
+    .sort(
+      (a, b) =>
+        b.date.localeCompare(a.date) ||
+        (a.seriesOrder ?? 0) - (b.seriesOrder ?? 0) ||
+        a.slug.localeCompare(b.slug)
+    );
 
   if (!IS_DEV) {
     productionCache = posts;
@@ -210,6 +245,8 @@ function toSummary(post: Post): PostSummary {
     tags: post.tags,
     draft: post.draft,
     project: post.project,
+    series: post.series,
+    seriesOrder: post.seriesOrder,
     readingTime: post.readingTime
   };
 }
@@ -251,4 +288,18 @@ export function getPostsByTag(tag: string): Post[] {
 
 export function getPostsForProject(projectSlug: string): PostSummary[] {
   return getPostSummaries().filter((post) => post.project === projectSlug);
+}
+
+export type SeriesInfo = {
+  name: string;
+  parts: PostSummary[];
+};
+
+export function getSeries(name: string): SeriesInfo | undefined {
+  const parts = getAllPosts()
+    .filter((post) => post.series === name)
+    .sort((a, b) => (a.seriesOrder ?? 0) - (b.seriesOrder ?? 0))
+    .map(toSummary);
+
+  return parts.length > 0 ? { name, parts } : undefined;
 }

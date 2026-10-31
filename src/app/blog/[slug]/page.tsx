@@ -9,7 +9,7 @@ import remarkGfm from "remark-gfm";
 import { mdxComponents } from "@/components/blog/mdx";
 import { PostLayout } from "@/components/blog/PostLayout";
 import { getProject } from "@/data/projects";
-import { getAdjacentPosts, getAllPosts, getPost } from "@/lib/posts";
+import { getAdjacentPosts, getAllPosts, getPost, getSeries } from "@/lib/posts";
 
 type PostRouteProps = {
   params: Promise<{ slug: string }>;
@@ -86,9 +86,10 @@ export default async function BlogPostPage({ params }: PostRouteProps) {
 
   const { newer, older } = getAdjacentPosts(post.slug);
   const relatedProject = post.project ? getProject(post.project) : undefined;
+  const series = post.series ? getSeries(post.series) : undefined;
 
   return (
-    <PostLayout post={post} newer={newer} older={older} relatedProject={relatedProject}>
+    <PostLayout post={post} newer={newer} older={older} relatedProject={relatedProject} series={series}>
       <MDXRemote source={post.content} components={mdxComponents} options={mdxOptions} />
     </PostLayout>
   );

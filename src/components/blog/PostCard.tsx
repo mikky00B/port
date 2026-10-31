@@ -13,6 +13,14 @@ export function PostCard({ post }: { post: PostSummary }) {
             <time dateTime={post.date}>{formatPostDate(post.date)}</time>
             <span aria-hidden="true">/</span>
             <span>{post.readingTime} min read</span>
+            {post.series && post.seriesOrder ? (
+              <>
+                <span aria-hidden="true">/</span>
+                <span>
+                  {post.series} · part {post.seriesOrder}
+                </span>
+              </>
+            ) : null}
             {post.draft ? (
               <span className="rounded border border-line px-1.5 py-0.5 text-warning">draft</span>
             ) : null}

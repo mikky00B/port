@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { formatPostDate } from "@/lib/format";
-import type { Post, PostSummary } from "@/lib/posts";
+import type { Post, PostSummary, SeriesInfo } from "@/lib/posts";
 import type { Project } from "@/data/projects";
 
 type PostLayoutProps = {
@@ -13,10 +13,11 @@ type PostLayoutProps = {
   newer?: PostSummary;
   older?: PostSummary;
   relatedProject?: Project;
+  series?: SeriesInfo;
   children: React.ReactNode;
 };
 
-export function PostLayout({ post, newer, older, relatedProject, children }: PostLayoutProps) {
+export function PostLayout({ post, newer, older, relatedProject, series, children }: PostLayoutProps) {
   return (
     <Container className="py-16">
       <div className="mx-auto max-w-5xl">
@@ -59,6 +60,30 @@ export function PostLayout({ post, newer, older, relatedProject, children }: Pos
                 ) : null}
               </div>
             </header>
+
+            {series ? (
+              <nav
+                className="mt-8 rounded-lg border border-line bg-panel/60 p-5"
+                aria-label={`Series: ${series.name}`}
+              >
+                <p className="font-mono text-xs uppercase tracking-[0.18em] text-dim">{series.name}</p>
+                <ol className="mt-3 space-y-2">
+                  {series.parts.map((part, index) => (
+                    <li key={part.slug} className="font-mono text-sm leading-6">
+                      {part.slug === post.slug ? (
+                        <span className="text-text">
+                          Part {index + 1}: {part.title}
+                        </span>
+                      ) : (
+                        <Link className="text-dim transition hover:text-text" href={`/blog/${part.slug}`}>
+                          Part {index + 1}: {part.title}
+                        </Link>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              </nav>
+            ) : null}
 
             <article className="prose-dev mt-10">{children}</article>
 

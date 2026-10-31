@@ -15,6 +15,8 @@ type FixtureOptions = {
   date?: string;
   tags?: string[];
   project?: string;
+  series?: string;
+  seriesOrder?: number;
   draft?: boolean;
   body?: string;
 };
@@ -26,6 +28,8 @@ function makePost({
   date = "2026-10-20",
   tags,
   project,
+  series,
+  seriesOrder,
   draft,
   body = "## Intro\n\nA few words."
 }: FixtureOptions): string {
@@ -40,6 +44,12 @@ function makePost({
   }
   if (project) {
     front.push(`project: ${project}`);
+  }
+  if (series) {
+    front.push(`series: ${series}`);
+  }
+  if (seriesOrder !== undefined) {
+    front.push(`seriesOrder: ${seriesOrder}`);
   }
   if (draft !== undefined) {
     front.push(`draft: ${draft}`);
@@ -211,6 +221,46 @@ describe("getAdjacentPosts", () => {
     const { getAdjacentPosts } = await loadPostsModule();
 
     expect(getAdjacentPosts("nope")).toEqual({ newer: undefined, older: undefined });
+  });
+});
+
+describe("series", () => {
+  const seriesPost = (slug: string, order: number, date = "2026-10-30") =>
+    makePost({ slug, date, series: "Inside Termii", seriesOrder: order });
+
+  it("orders same-date posts by part and exposes series metadata", async () => {
+    installPosts({
+      "p3.mdx": seriesPost("p3", 3),
+      "p1.mdx": seriesPost("p1", 1),
+      "p2.mdx": seriesPost("p2", 2)
+    });
+    const { getAllPosts, getPostSummaries, getSeries } = await loadPostsModule();
+
+    expect(getAllPosts().map((post) => post.slug)).toEqual(["p1", "p2", "p3"]);
+    const [summary] = getPostSummaries();
+    expect(summary).toMatchObject({ series: "Inside Termii", seriesOrder: 1 });
+
+    const series = getSeries("Inside Termii");
+    expect(series?.name).toBe("Inside Termii");
+    expect(series?.parts.map((part) => part.slug)).toEqual(["p1", "p2", "p3"]);
+    expect(getSeries("No Such Series")).toBeUndefined();
+  });
+
+  it("rejects series metadata that is incomplete or malformed", async () => {
+    installPosts({ "lonely.mdx": makePost({ slug: "lonely", series: "Inside Termii" }) });
+    const { getAllPosts } = await loadPostsModule();
+
+    expect(() => getAllPosts()).toThrow(
+      '[blog] content/posts/lonely.mdx: "series" and "seriesOrder" must be set together'
+    );
+
+    installPosts({
+      "zero.mdx": makePost({ slug: "zero", series: "Inside Termii", seriesOrder: 0 })
+    });
+    const reloaded = await loadPostsModule();
+    expect(() => reloaded.getAllPosts()).toThrow(
+      '[blog] content/posts/zero.mdx: "seriesOrder" must be a positive integer'
+    );
   });
 });
 
