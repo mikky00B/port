@@ -8,7 +8,7 @@ import { getAllPosts, getAllTags } from "@/lib/posts";
 export const metadata: Metadata = {
   title: "Blog",
   description:
-    "I write down what I learn while building, deploying, and occasionally breaking real systems — so you can skip the expensive mistakes.",
+    "Technical deep dives into real infrastructure: How the pieces fit, where they break, and what the design decisions actually cost.",
   alternates: {
     canonical: "/blog",
     types: {
@@ -26,8 +26,8 @@ export default function BlogIndexPage() {
     <Container className="py-16">
       <SectionHeader
         eyebrow="Blog"
-        title="Backend engineering, learned in public."
-        description="I write down what I learn while building, deploying, and occasionally breaking real systems — so you can skip the expensive mistakes."
+        title="software systems, taken apart."
+        description="Technical deep dives into real infrastructure: How the pieces fit, where they break, and what the design decisions actually cost."
       />
 
       {tags.length > 0 ? (
