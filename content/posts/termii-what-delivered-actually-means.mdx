@@ -1,0 +1,141 @@
+---
+title: "Inside Termii: what delivered actually means"
+description: "The message lifecycle after the API responds: routing, delivery reports, webhooks, and why accepted, delivered, and read are three different promises."
+date: 2026-10-30
+tags: [termii, messaging, webhooks, distributed-systems]
+draft: false
+---
+
+The [first post in this series](/blog/termii-messaging-architecture-deep-dive) ended with an API response: `{"status": "queued"}`. This post follows the message the rest of the way. What does the platform actually know about your SMS, when does it know it, and how does the truth travel back to the business that asked for it?
+
+The short answer: through a lifecycle of statuses, delivery reports, and webhooks. And the most useful lesson in messaging hides in the gaps between them.
+
+> Accepted, delivered, and read are three different events. A backend that treats them as one is guessing.
+
+## The map: who moves a message
+
+Five components sit between a business and a delivered SMS:
+
+- **The messaging API**, the interface the business integrates with
+- **An SMS gateway**, the infrastructure that connects applications to SMS networks
+- **An SMS aggregator**, an intermediary with access to many operators
+- **The SMSC**, the operator's centre that processes and routes SMS
+- **The mobile network**, which hands the message to the device
+
+The commercial terms overlap on purpose: one company may run its own gateway and also resell aggregation. Two route strategies dominate. A direct carrier connection buys control, visibility, and (at scale) better economics, but demands integration, agreements, and certification per operator. An aggregator buys breadth and speed at the price of dependency and margin. Most real platforms go hybrid: direct routes for high-volume destinations, aggregators for coverage and backup.
+
+Routing itself is a measured decision, not a vibe. A routing engine weighs the destination network, provider availability and throughput, historical delivery success and latency, cost, sender ID restrictions, and urgency. An OTP justifies the reliable route; a promotional blast can prefer the cheap one. The operative word is measured: route on comparable performance data, not on whichever provider answered the phone last.
+
+## The life of a message
+
+<ArchitectureDiagram
+  items={[
+    "API request accepted, message row created",
+    "Queued for processing",
+    "Worker submits through a route",
+    "Provider acknowledges the submission",
+    "Mobile network processes the message",
+    "Delivery report generated",
+    "Status updated internally",
+    "Webhook notifies the business"
+  ]}
+/>
+
+Step 4 is where intuition breaks. The provider acknowledging a submission is not the network delivering the message. Those are separate events, sometimes separated by seconds, sometimes by minutes, sometimes forever.
+
+## The status vocabulary
+
+Mature platforms normalize provider outcomes into a shared vocabulary. The happy path:
+
+<FlowDiagram
+  steps={["QUEUED", "SUBMITTED", "ENROUTE", "DELIVERED"]}
+  caption="The unhappy siblings: UNDELIVERABLE, EXPIRED, REJECTED, UNKNOWN."
+/>
+
+Under the hood, much of this travels over SMPP. Three commands carry the story: `submit_sm` submits the message, `submit_sm_resp` answers the submission, and `deliver_sm` later carries the delivery receipt. A delivery report (DLR) reports what the infrastructure observed. It is still not proof a human read the SMS, and it is definitely not proof the OTP was typed correctly.
+
+Provider status names and meanings differ, so normalize internally while storing the raw provider status alongside. When something looks wrong six months from now, the raw value is the truth you can grep for.
+
+## Track history, not just state
+
+The data model that survives contact with production separates two questions:
+
+```text
+messages        answers: what is the current known status?
+  id, customer_id, recipient, content, provider,
+  provider_message_id, status, created_at, updated_at
+
+message_events  answers: what has been observed over time?
+  id, message_id, event_type, provider_status,
+  error_code, occurred_at, received_at, raw_payload
+```
+
+`messages` is the present tense. `message_events` is the diary. You need both, because the present tense can be wrong, and the diary is how you correct it.
+
+Three rules earn their keep immediately. Store the original provider status next to your normalized one. Correlate events by message reference, never by phone number alone. And design for events that are duplicate, delayed, or out of order, because all three will happen.
+
+## Webhooks: stop asking, start listening
+
+Two ways to learn a message's fate. Polling means repeatedly asking the provider for updates. A webhook means the provider sends an HTTP request to your endpoint when something happens. Polling wastes requests and lags; webhooks push the truth, but push it on the provider's schedule, in whatever order it arrives.
+
+A teaching-example payload (the real schema lives in the provider's current docs):
+
+```json
+{
+  "event_id": "evt_789xyz",
+  "event_type": "sms.delivered",
+  "message_id": "msg_123abc",
+  "status": "DELIVERED",
+  "recipient": "2348012345678",
+  "timestamp": "2026-10-30T12:30:00Z"
+}
+```
+
+The receiver itself is simple. Reliable is a different property, and it comes from the sequence:
+
+1. Receive the request.
+2. Authenticate the sender and validate the schema.
+3. Persist the event durably.
+4. Commit the transaction.
+5. Return 2xx, fast.
+6. Process asynchronously.
+
+The rule the whole section compresses into: **persist before you acknowledge**. If the database is down, you must not return success for an event you did not store, because that acknowledgement is the provider's signal to stop retrying.
+
+```python
+@app.post("/webhooks/termii")
+async def termii_webhook(request: Request):
+    raw_body = await request.body()
+
+    try:
+        payload = json.loads(raw_body)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
+
+    # authenticate per the provider's documented mechanism
+    # validate the event schema
+    # persist the event before acknowledging it
+    # process asynchronously after durable persistence
+
+    return {"received": True}
+```
+
+Security is its own checklist: HTTPS everywhere, signature verification if and only if the provider documents a signing scheme (never invent one), timestamp freshness against replays where supported, schema validation, size limits, rate limits, and logs that scrub secrets.
+
+## Three gremlins in every webhook feed
+
+**Duplicates.** If your acknowledgement got lost, the provider sends the event again. It should; that is the contract. Make processing idempotent with a stable provider event ID enforced by a database uniqueness constraint, and never repeat business side effects on re-delivery. If the provider offers no stable event ID, build a careful deduplication key from the fields it does supply.
+
+**Out-of-order events.** DELIVERED can arrive before the ENROUTE event that caused it. Record both the occurrence time and the receipt time, preserve the full history, and apply valid state transitions only. An older event must never regress the current status; it just becomes history.
+
+**Downtime.** If your webhook endpoint is offline, the provider may retry for a while, but never assume retries continue forever. Reconciliation is the safety net: periodically query the provider's reporting API for messages whose final status is unknown, compare against internal records, repair missing updates, and alert on pendings that have aged past a threshold.
+
+## Why this is event-driven by nature
+
+The sending process and the status-processing process are different programs with different loads. The sender submits and finishes; a later event updates the world. Decoupled like that, each side scales on its own, and the message_events table becomes the audit trail that ties them together.
+
+## The takeaway
+
+An API acceptance, a network delivery receipt, and a person reading the SMS are three different things, arriving through three different mechanisms. Track the full lifecycle, keep the event history, persist before you acknowledge, and reconcile what you cannot confirm.
+
+So far the network has been cooperating. It will not always. The next post is about the day the providers themselves fail: retries, backoff, circuit breakers, and the failover decision that can quietly send everything twice. Read it here: [when providers fail](/blog/termii-when-providers-fail).

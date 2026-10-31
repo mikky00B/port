@@ -129,7 +129,7 @@ Here is the subtle one, the failure mode most queue tutorials skip, and it deser
 
 A worker submits the SMS to the provider successfully, and the message is genuinely on its way. Then it crashes before acknowledging the queue message. The broker, doing exactly what it should, redelivers the task. Another worker sends the same SMS. The customer gets two OTPs, and one of them was never authorized by anyone.
 
-Redelivery guarantees at-least-once processing, which means duplicates are normal, expected, and your problem to handle. The usual answer is idempotency: give every message a unique ID and make repeated submissions of the same ID harmless. There is a cousin of this problem too: saving the message to PostgreSQL and publishing it to Redis are two separate operations, and one can succeed while the other fails. The transactional outbox pattern exists for exactly that gap. Both deserve their own post.
+Redelivery guarantees at-least-once processing, which means duplicates are normal, expected, and your problem to handle. The usual answer is idempotency: give every message a unique ID and make repeated submissions of the same ID harmless. There is a cousin of this problem too: saving the message to PostgreSQL and publishing it to Redis are two separate operations, and one can succeed while the other fails. The transactional outbox pattern exists for exactly that gap. Both topics get their full treatment in the series finale, [the war on duplicate OTPs](/blog/termii-idempotency-exactly-once).
 
 ## Build the smallest version
 

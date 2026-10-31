@@ -1,0 +1,110 @@
+---
+title: "Inside Termii: when providers fail"
+description: "Failure classification, exponential backoff, jitter, circuit breakers, and provider failover: how a messaging platform survives the day the network breaks, and why failover can double your messages."
+date: 2026-10-30
+tags: [termii, messaging, reliability, distributed-systems]
+draft: false
+---
+
+The [previous post](/blog/termii-what-delivered-actually-means) followed a message through a cooperative network. This one is about the other day: the provider is timing out, the queue is filling, and the business still wants its OTPs delivered.
+
+Every integration you will ever write has a provider on the other end, and that provider will fail. The design question is never whether. It is what each failure means.
+
+> A confirmed rejection and a timeout are not the same outcome. One means do not resend. The other means you do not know yet.
+
+## Not every failure deserves a retry
+
+Failures sort into three buckets, and the buckets behave differently:
+
+- **Transient:** the provider is briefly unavailable, a network blip, some server-side 5xx, a throttling window. These deserve retries.
+- **Permanent:** an invalid phone number, invalid credentials, an unsupported sender ID, content that cannot route, an account restriction that needs a human. Retrying these is not resilience; it is waste with extra steps.
+- **Ambiguous:** the timeout. The provider may have accepted your message even though the response never reached you. This is the dangerous bucket, and it gets its own section.
+
+## Retry, failover, fallback: three different moves
+
+The vocabulary gets collapsed in casual conversation, and the collapse causes incidents:
+
+- **Retry:** attempt the same operation again, usually against the same provider.
+- **Provider failover:** abandon this route and submit through a different one.
+- **Channel fallback:** switch channels entirely, say SMS to WhatsApp, voice, or email, where the message type supports it.
+
+They answer different questions. Retry says "try again here." Failover says "try somewhere else." Fallback says "use a different medium." Treating them as one knob is how systems resend things customers already received.
+
+## Back off, then add jitter
+
+Hammering an unhealthy provider with immediate retries turns one failure into a flood. Exponential backoff spaces attempts out:
+
+```text
+delay(n) = min(max_delay, base_delay * 2^n)
+
+with jitter:
+delay(n) = random(0, min(max_delay, base_delay * 2^n))
+```
+
+The second line matters as much as the first. A thousand workers that fail together and retry on the same schedule will recreate the original spike in perfect unison. Jitter adds randomness so the retry wave spreads out instead of arriving as a wall.
+
+Production retry logic earns its keep with: error classification, bounded attempts, real timeouts, backoff with jitter, retry schedules that survive process restarts, attempt records you can observe, and careful handling of the ambiguous submissions from the timeout bucket.
+
+## The circuit breaker
+
+When a provider looks sick, the worst response is to keep feeding it work and waiting. A circuit breaker watches failure rates and changes behavior:
+
+| From | To | Trigger |
+| --- | --- | --- |
+| CLOSED | OPEN | failures cross the configured threshold |
+| OPEN | HALF-OPEN | the recovery interval elapses |
+| HALF-OPEN | CLOSED | test calls succeed |
+| HALF-OPEN | OPEN | test calls fail |
+
+CLOSED means normal traffic. OPEN means stop calling, fail fast, and let the queue hold the work. HALF-OPEN lets a few test requests through to check whether the provider recovered. The payoff is on both sides: callers get instant failures instead of three-second hangs, and the provider gets room to breathe instead of a thousand retries.
+
+There are no universal threshold numbers. Failure counts, recovery intervals, and test-call volumes are tuning decisions per provider and per service.
+
+## Failover can double-send
+
+Now combine failover with the timeout bucket, and watch the trap close:
+
+<FlowDiagram
+  steps={["Submit to Provider A", "A accepts", "Response lost", "Timeout: outcome unknown", "Resubmit via Provider B", "Customer gets two OTPs"]}
+  highlight={[2, 4]}
+  caption="Failover after an ambiguous timeout can deliver the same message twice."
+/>
+
+Provider A accepted the message. The acknowledgement never arrived. The application assumes failure and routes through Provider B, which delivers just fine. So does A. The customer receives two password resets, and nothing in either provider's logs looks like an error.
+
+The rule: classify before you switch. A confirmed rejection is safe to fail over. A timeout after a possibly successful submission is not; reconcile it where the provider's reporting API allows, and only then decide. Failover applied to unknowns is how one logical message becomes two physical ones.
+
+## Same OTP, different channel
+
+Channel fallback has its own subtleties. The verification challenge is one logical thing even when it travels over several channels: keep a single challenge valid across SMS, WhatsApp, and voice, and never accidentally mint multiple independently valid OTPs. Respect consent and channel availability, and make expiry and attempt limits explicit rather than implied.
+
+Termii publicly documents an Auto Failover API that cascades a message across WhatsApp, SMS, email, and voice. The exact configuration surface lives in their current documentation; treat the rest of this section as the design space, not a claim about their implementation.
+
+## The adapter makes all of it swappable
+
+None of this works if providers are hard-coded. A thin abstract interface puts every carrier behind one door:
+
+```python
+from abc import ABC, abstractmethod
+
+class SMSProvider(ABC):
+    @abstractmethod
+    async def send(self, recipient, message):
+        ...
+
+class ProviderA(SMSProvider):
+    async def send(self, recipient, message):
+        ...  # Provider A integration
+
+class ProviderB(SMSProvider):
+    async def send(self, recipient, message):
+        ...  # Provider B integration
+```
+
+The adapter is the easy part. The routing layer around it carries the real weight: error classification, circuit breaker state, provider-specific rate limits, attempt tracking, duplicate prevention, and reconciliation of ambiguous outcomes.
+
+## The takeaway
+
+Retry the transient, never the permanent, and treat timeouts as unknowns rather than failures. Back off with jitter, break the circuit when a provider is down, and classify before you fail over.
+
+Which raises the question this series has been building toward: if timeouts and redelivery can always produce a second attempt, how do you make retries safe at all? That is the idempotency problem, and it closes the series: [the war on duplicate OTPs](/blog/termii-idempotency-exactly-once).

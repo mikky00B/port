@@ -1,0 +1,177 @@
+---
+title: "Inside Termii: the war on duplicate OTPs"
+description: "Idempotency keys, database constraints, the transactional outbox, and worker-level deduplication: how a messaging API makes retries, crashes, and ambiguous timeouts harmless."
+date: 2026-10-30
+tags: [termii, messaging, idempotency, distributed-systems]
+draft: false
+---
+
+This closes the series. [Post one](/blog/termii-messaging-architecture-deep-dive) promised that duplicates deserved their own post. [Post three](/blog/termii-when-providers-fail) showed why: redelivery after a crash and failover after a timeout can both turn one logical message into two physical SMS. This post is the fix.
+
+Start with the definition, because it is narrower than most people assume:
+
+> An operation is idempotent when doing it twice has the same effect as doing it once.
+
+Idempotency does not mean rejecting every repeated request. It means recognizing repeats and making them harmless. The customer who retries an OTP request after a timeout should get the same logical operation, not a second SMS.
+
+## A timeout is not a no
+
+The canonical duplicate, step by step:
+
+1. The customer requests an OTP.
+2. QuickBank submits the SMS request to the provider.
+3. The provider accepts the SMS.
+4. The response is lost to a network timeout.
+5. QuickBank assumes the request failed.
+6. QuickBank retries.
+7. The provider accepts a second SMS.
+
+Every outcome in a distributed system belongs to one of three boxes. Confirmed failure: the provider explicitly rejected the request. Confirmed success: the provider confirmed acceptance. Ambiguous: the provider may have accepted, but nobody can prove it either way. The ambiguous box is where duplicate OTPs are born, and no amount of infrastructure removes the box. Design decides what happens inside it.
+
+## The idempotency key
+
+The client-side fix is one stable identifier per logical operation. Retries carry the same key instead of minting a new request:
+
+```text
+POST /api/otp/send
+Idempotency-Key: otp-request-8a72f1
+
+{ "phone": "2348012345678", "purpose": "login" }
+```
+
+The backend contract for any incoming key:
+
+- **New key:** create the operation.
+- **Existing key, same request:** return the recorded result, or the current state if still processing.
+- **Existing key, different request:** reject with a conflict. A reused key with a different phone number is an error, not a hint.
+- **Still processing:** return its state rather than starting a second operation.
+
+That third behavior needs a `request_hash`: hash the canonical request body and store it with the key. Same key plus different data is a client bug worth a 409, not a silent surprise.
+
+## Let the database referee
+
+The tempting implementation is check-then-insert, and under concurrency it is broken:
+
+1. Worker A checks whether the key exists.
+2. Worker B checks the same key before A inserts.
+3. Both see nothing.
+4. Both create the operation.
+
+The fix is one line of schema:
+
+```sql
+UNIQUE (customer_id, idempotency_key)
+```
+
+The database evaluates the constraint at insert time, so only one of the racing workers wins. The application catches the conflict and fetches the winner's record. Note the customer scope: two customers can independently generate the same key string, and that must not collide.
+
+The record itself is boring, which is a compliment:
+
+```sql
+idempotency_records(
+  id, customer_id, idempotency_key,
+  request_hash, status, response_body,
+  created_at, updated_at
+)
+```
+
+## The endpoint, end to end
+
+Assembling the pieces in FastAPI:
+
+```python
+@app.post("/api/otp/send")
+async def send_otp(
+    payload: OTPRequest,
+    idempotency_key: str = Header(alias="Idempotency-Key"),
+):
+    request_hash = hash_request(payload)
+
+    existing = await get_idempotency_record(
+        customer_id=authenticated_customer_id,
+        key=idempotency_key,
+    )
+
+    if existing:
+        if existing.request_hash != request_hash:
+            raise HTTPException(
+                status_code=409,
+                detail="Idempotency key reused with different data",
+            )
+        return existing.response_body
+
+    return await create_otp_operation(
+        customer_id=authenticated_customer_id,
+        payload=payload,
+        key=idempotency_key,
+        request_hash=request_hash,
+    )
+```
+
+The helper functions are deliberately abstract, and a production version must resolve the lookup-versus-insert race through the uniqueness constraint rather than trusting the pre-check. Two design rules matter more than the code. The operation and its outbox event are saved in one database transaction. And the HTTP handler never calls the SMS provider; a worker does that later.
+
+## The transactional outbox
+
+That last rule exists because of a gap the series has skirted until now. Saving a message to PostgreSQL and publishing a job to Redis are two operations against two systems. Either can succeed while the other fails: a database row with no queue job (a message stuck forever), or a queue job with no committed row (a message that should not exist).
+
+The transactional outbox closes the gap by putting both writes in one transaction:
+
+```sql
+BEGIN;
+  -- create the OTP operation
+  -- create the message record
+  -- insert outbox event: SMS_REQUESTED
+COMMIT;
+```
+
+A separate publisher reads pending outbox events and pushes them to the queue. The database transaction is now the single source of truth: if it committed, the event will eventually be published; if it did not, nothing was ever promised.
+
+One honest wrinkle: the publisher can crash after publishing but before marking the event done, and publish it twice on the next pass. Consumers must therefore remain idempotent anyway. Nobody in the chain gets to assume exactly-once; everyone agrees to make duplicates harmless.
+
+## Workers need their own dedup
+
+API-level idempotency does not reach the worker layer. Queue jobs get redelivered, workers crash mid-submission, and provider responses vanish. The worker-side design:
+
+- Give every logical message a stable internal ID.
+- Store provider submission attempts as separate records.
+- Use a provider-supported idempotency key if the provider offers one.
+- Never blindly resubmit an ambiguous attempt.
+
+```text
+messages:  id: msg_123, status: QUEUED
+
+provider_attempts:
+  id: attempt_001
+  message_id: msg_123
+  provider: ProviderA
+  status: SUBMISSION_UNKNOWN
+  provider_message_id: NULL
+```
+
+That `SUBMISSION_UNKNOWN` status is the design's honesty made visible. A timeout after submission is recorded as exactly what it is: unknown, not failed. Reconciliation against provider reports (post two's safety net) decides whether another attempt is warranted.
+
+## At-most-once, at-least-once, exactly-once effects
+
+Name the three guarantees precisely, because marketing blurs them:
+
+- **At-most-once:** the operation runs no more than once; it may be lost.
+- **At-least-once:** the operation is retried until acknowledged; duplicates are possible.
+- **Exactly-once effect:** one logical outcome despite retries, achieved through coordinated deduplication and transactional design, not through a magic transport.
+
+Physical delivery of an external SMS exactly once is not a promise you can keep when acknowledgements themselves get lost. The realistic engineering goal is the trio this series kept repeating: idempotent internal operations, duplicate processing that is harmless, and reconciliation of ambiguous external outcomes before retrying.
+
+## The takeaway and the capstone
+
+The series in one breath: one API over many carriers, a lifecycle that reports the truth, failure handling that does not double-send, and idempotency that makes retries boring. None of it removes the ambiguous box; all of it decides, deliberately, what happens there.
+
+If the concepts now make sense, close the loop the practical way and build the smallest platform that uses every piece:
+
+- Submit an SMS and return a message ID with a `queued` status
+- Process asynchronously with workers and provider-specific rate limits
+- Retry transient failures with backoff and jitter; simulate failover
+- Receive delivery webhooks, persist before acknowledging, deduplicate events
+- Support idempotency keys on OTP requests
+- Use a transactional outbox for the database-to-queue handoff
+- Track message status and provider attempts, and reconcile the unknowns
+
+Break it on purpose: kill workers mid-flight, drop responses, take the webhook endpoint down. Every bug you find will be one of the boxes from this series. That is the point.
