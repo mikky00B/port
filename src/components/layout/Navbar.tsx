@@ -21,7 +21,16 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-background/82 backdrop-blur-xl">
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8" aria-label="Main navigation">
-        <Link className="focus-ring rounded font-heading text-sm font-semibold tracking-wide text-text" href="/">
+        <Link
+          className="focus-ring flex items-center gap-2.5 rounded font-heading text-sm font-semibold tracking-wide text-text"
+          href="/"
+        >
+          <span
+            aria-hidden="true"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-line bg-panel font-mono text-[11px] font-bold text-text"
+          >
+            cm
+          </span>
           clevermike
         </Link>
         <div className="hidden items-center gap-1 md:flex">

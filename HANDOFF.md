@@ -1,35 +1,41 @@
 # Handoff
 
 ## Current task
-Series navigation for the blog ("Inside Termii" deep dive, parts 1 to 4) plus blog header reframe.
+Portfolio pass: featured work, case studies, resume from the updated CV, and pinned writing.
 
 ## Status
-- [x] Termii series posts (lessons 3 to 6) published and cross-linked
-- [x] Blog header reframed as "software systems, taken apart." (deep-dive voice)
-- [x] DeployDock retrospective section removed per owner decision
-- [x] Series support: frontmatter fields, index ordering, card chips, on-post navigator
+- [x] Homepage shows DeployDock, WATCHDOG, Gatekeeper, and Swindle, with archived work in an earlier list
+- [x] DeployDock and WATCHDOG case studies use live screenshots, the written problem, and the architecture list
+- [x] Resume page follows `Michael_Abulude_Backend_Developer_CV.pdf`
+- [x] Writing on the homepage leads with the Termii series opener and the DeployDock post
+- [x] Title line is "Software Engineer" on the hero, about page, footer, metadata, and resume
 
 ## Changes
-- `src/lib/posts.ts` — new `series` (string) and `seriesOrder` (positive integer) frontmatter fields with validation; the two must be set together. `getAllPosts` now tie-breaks equal dates by series order, then slug. New `getSeries(name)` returns `{ name, parts }` sorted by part.
-- `src/components/blog/PostCard.tsx` — cards show `{series} · part {N}` in the meta row when the post belongs to a series.
-- `src/components/blog/PostLayout.tsx` — new optional `series` prop renders a series navigator (all parts, current one highlighted, others linked) between the header and the article.
-- `src/app/blog/[slug]/page.tsx` — resolves the post's series via `getSeries` and passes it to the layout.
-- `content/posts/termii-*.mdx` — the four series posts declare `series: Inside Termii` and `seriesOrder: 1..4`.
-- `src/lib/posts.test.ts` — two new tests: same-date series ordering plus `getSeries`, and validation errors (missing pair, non-positive order).
-- `src/app/blog/page.tsx` — header/meta now "software systems, taken apart." with a deep-dive description.
-- `content/posts/deploydock-release-pipeline.mdx` — removed the "What I would do differently" section (owner decision).
+- `public/resume/Michael_Abulude_Backend_Developer_CV.pdf` — CV moved here from the repo root. The truncated `Michael_Abulude_Backend_Developer_Resu.pdf` is removed.
+- `public/projects/deploydock.png`, `public/projects/watchdog.png` — viewport captures of the live homepages. WATCHDOG is cropped to the hero.
+- `src/data/socials.ts` — identity, resume path, and download filename.
+- `src/data/resume.ts` (new) — roles, selected work, skills, and education taken from the CV.
+- `src/data/projects.ts` — Gatekeeper is featured; case-study images; `getFeaturedProjects` and `getEarlierProjects`.
+- `src/data/projects.test.ts` (new) — featured and earlier selection.
+- `src/lib/posts.ts`, `src/lib/posts.test.ts` — `getPostsInOrder` for the pinned writing.
+- `src/app/page.tsx` — featured grid, earlier list, selected writing, CV download.
+- `src/app/resume/page.tsx` — experience, skills, and education. Selected work is omitted; those products stay on the homepage and in the PDF. Portrait sits above the PDF download. The contact line sits under the summary, so the photo column does not push it down.
+- `public/clevermike.jpeg` — headshot moved from the repo root.
+- `src/app/projects/[slug]/page.tsx` — real image, problem, architecture. The placeholder Overview / Metrics / Incidents block is gone.
+- `src/app/layout.tsx`, `src/app/about/page.tsx`, `src/components/layout/Footer.tsx` — one title line, and the degree stated as education.
 
 ## Decisions
-- Numbering lives in frontmatter (`series`/`seriesOrder`), not in titles, so titles stay clean and the UI owns presentation.
-- Series navigation is additive: the chronological prev/older links remain, and the navigator covers series order.
-- Part ordering uses the existing date sort with a series-order tie-break, so no separate index structure was needed.
+- The CV title is "Software Engineer", so that is the line used across the site.
+- Featured order is DeployDock, WATCHDOG, Gatekeeper, Swindle. The shelf slug order is unchanged.
+- Homepage writing is the Termii part 1 post, then the DeployDock release post. The blog index still lists every post.
+- Resume copy stays with the CV. Venu3D is included as written, without added metrics.
+- The phone number from the CV is on the resume page.
 
 ## Test results
-- `npm test`: 17/17 passed (15 prior + 2 series tests).
-- `npx tsc --noEmit`: clean.
-- `npm run lint`: clean.
-- `npm run build`: succeeds, 28/28 pages static.
-- Rendered output verified: index cards show "Inside Termii · part 1..4"; each series post renders the four-part navigator with the current part highlighted.
+- `npm test`: 20 passed (projects selection and posts, including `getPostsInOrder`).
+- `npm run lint`: passed.
+- Dev server checks: `/`, `/resume`, `/about`, `/projects/deploydock`, and `/projects/watchdog` return 200. The CV URL returns `application/pdf`.
+- Headless Chrome renders: hero says Software Engineer; DeployDock case study shows the live screenshot, the problem, and the seven architecture steps; the resume page shows both roles, the three products, skills, and education.
 
 ## Next action
-Commit and push the series navigation work when the owner confirms.
+Commit when the owner confirms. The archived URL shortener still links to the GitHub profile, not a repository.
