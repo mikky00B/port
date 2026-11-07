@@ -23,13 +23,14 @@ Portfolio pass: featured work, case studies, resume from the updated CV, and pin
 - `public/clevermike.jpeg` — headshot moved from the repo root.
 - `src/app/projects/[slug]/page.tsx` — real image, problem, architecture. The placeholder Overview / Metrics / Incidents block is gone.
 - `src/app/layout.tsx`, `src/app/about/page.tsx`, `src/components/layout/Footer.tsx` — one title line, and the degree stated as education.
+- `src/data/resume.ts`, `src/app/resume/page.tsx` — the phone number was removed from the public page after review (privacy: `tel:` links get scraped). It stays in the CV PDF.
 
 ## Decisions
 - The CV title is "Software Engineer", so that is the line used across the site.
 - Featured order is DeployDock, WATCHDOG, Gatekeeper, Swindle. The shelf slug order is unchanged.
 - Homepage writing is the Termii part 1 post, then the DeployDock release post. The blog index still lists every post.
 - Resume copy stays with the CV. Venu3D is included as written, without added metrics.
-- The phone number from the CV is on the resume page.
+- The phone number stays in the CV PDF only; it is not published on the resume page.
 
 ## Test results
 - `npm test`: 20 passed (projects selection and posts, including `getPostsInOrder`).
@@ -38,4 +39,4 @@ Portfolio pass: featured work, case studies, resume from the updated CV, and pin
 - Headless Chrome renders: hero says Software Engineer; DeployDock case study shows the live screenshot, the problem, and the seven architecture steps; the resume page shows both roles, the three products, skills, and education.
 
 ## Next action
-Commit when the owner confirms. The archived URL shortener still links to the GitHub profile, not a repository.
+Committed and pushed (review: PASS, see REVIEW.md 2026-11-07). Optional follow-ups: case studies for Gatekeeper and Swindle; the archived URL shortener still links to the GitHub profile, not a repository.

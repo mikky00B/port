@@ -16,7 +16,7 @@ export function Footer() {
       <Container className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="font-heading font-semibold text-text">Michael Abulude</p>
-          <p className="mt-1 text-sm text-muted">Backend-focused software developer</p>
+          <p className="mt-1 text-sm text-muted">{socials.identity}</p>
         </div>
         <div className="flex flex-wrap gap-4">
           {links.map((link) => (

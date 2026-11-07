@@ -255,6 +255,14 @@ export function getPostSummaries(): PostSummary[] {
   return getAllPosts().map(toSummary);
 }
 
+export function getPostsInOrder(slugs: string[]): PostSummary[] {
+  const bySlug = new Map(getAllPosts().map((post) => [post.slug, post]));
+  return slugs.flatMap((slug) => {
+    const post = bySlug.get(slug);
+    return post ? [toSummary(post)] : [];
+  });
+}
+
 export function getAdjacentPosts(slug: string): {
   newer: PostSummary | undefined;
   older: PostSummary | undefined;

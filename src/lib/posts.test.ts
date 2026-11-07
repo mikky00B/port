@@ -264,6 +264,32 @@ describe("series", () => {
   });
 });
 
+describe("getPostsInOrder", () => {
+  it("returns the requested posts in the requested order and skips unknown slugs", async () => {
+    installPosts({
+      "deploydock-release-pipeline.mdx": makePost({
+        slug: "deploydock-release-pipeline",
+        date: "2026-10-20",
+        project: "deploydock"
+      }),
+      "termii-messaging-architecture-deep-dive.mdx": makePost({
+        slug: "termii-messaging-architecture-deep-dive",
+        date: "2026-10-30"
+      }),
+      "other.mdx": makePost({ slug: "other", date: "2026-11-01" })
+    });
+    const { getPostsInOrder } = await loadPostsModule();
+
+    expect(
+      getPostsInOrder([
+        "termii-messaging-architecture-deep-dive",
+        "missing",
+        "deploydock-release-pipeline"
+      ]).map((post) => post.slug)
+    ).toEqual(["termii-messaging-architecture-deep-dive", "deploydock-release-pipeline"]);
+  });
+});
+
 describe("summaries, tags and projects", () => {
   it("returns summaries without content or toc and resolves the project link", async () => {
     installPosts({

@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { PostCard } from "@/components/blog/PostCard";
+import { ArchitectureDiagram } from "@/components/projects/ArchitectureDiagram";
 import { getProject, projects } from "@/data/projects";
 import { getPostsForProject } from "@/lib/posts";
 
@@ -59,15 +61,41 @@ export default async function ProjectCaseStudyPage({ params }: ProjectRouteProps
 
       <div className="mt-10 grid gap-5 md:grid-cols-3">
         {[
-          ["Timeline", "Personal project"],
           ["Focus", project.focus],
-          ["Category", project.category]
+          ["Category", project.category],
+          ["Stack", project.stack.join(", ")]
         ].map(([label, value]) => (
           <Card key={label}>
             <p className="font-mono text-xs uppercase tracking-[0.18em] text-dim">{label}</p>
             <p className="mt-3 text-sm font-medium leading-6 text-text">{value}</p>
           </Card>
         ))}
+      </div>
+
+      {project.image ? (
+        <figure className="mt-10 overflow-hidden rounded-lg border border-line bg-black">
+          <Image
+            src={project.image.src}
+            alt={project.image.alt}
+            width={project.image.width}
+            height={project.image.height}
+            className="h-auto w-full"
+            sizes="(min-width: 1152px) 1088px, 100vw"
+          />
+        </figure>
+      ) : null}
+
+      <div className="mt-16 grid items-start gap-8 lg:grid-cols-2">
+        <Card>
+          <h2 className="font-heading text-xl font-semibold text-text">The problem</h2>
+          <p className="mt-5 text-sm leading-7 text-muted">{project.challenge}</p>
+        </Card>
+        <div>
+          <h2 className="font-heading text-xl font-semibold text-text">Architecture</h2>
+          <div className="mt-5">
+            <ArchitectureDiagram items={project.architecture} />
+          </div>
+        </div>
       </div>
 
       <div className="mt-16 grid gap-5 lg:grid-cols-2">
@@ -88,21 +116,6 @@ export default async function ProjectCaseStudyPage({ params }: ProjectRouteProps
           </ul>
         </Card>
       </div>
-
-      <Card className="mt-16">
-        <h2 className="font-heading text-xl font-semibold text-text">Screenshots / UI Mockup</h2>
-        <div className="mt-5 rounded-lg border border-line bg-black p-5">
-          <div className="grid gap-3 sm:grid-cols-3">
-            {["Overview", "Metrics", "Incidents"].map((panel) => (
-              <div key={panel} className="min-h-28 rounded-md border border-line bg-panel2 p-4">
-                <p className="font-mono text-xs text-accent">{panel}</p>
-                <div className="mt-5 h-2 rounded bg-line" />
-                <div className="mt-3 h-2 w-2/3 rounded bg-line" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </Card>
 
       {writeUps.length > 0 ? (
         <section className="mt-16">

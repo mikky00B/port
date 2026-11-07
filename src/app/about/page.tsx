@@ -7,7 +7,7 @@ import { stackGroups } from "@/data/stack";
 
 export const metadata: Metadata = {
   title: "About",
-  description: "About Michael Abulude, a Telecommunication Engineer and backend-focused fullstack developer."
+  description: "About Michael Abulude, a software engineer building backend systems, APIs, and monitoring tools."
 };
 
 const journey = [
@@ -24,13 +24,16 @@ export default function AboutPage() {
       <SectionHeader
         eyebrow="About"
         title="I build backend systems, APIs, monitoring tools, and practical web products."
-        description="I am Michael Abulude, a Telecommunication Engineer and a backend-focused fullstack developer."
+        description="I am Michael Abulude, a software engineer. I build backend systems, APIs, monitoring tools, and practical web products."
       />
 
       <div className="mt-10 grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
         <Card>
           <p className="leading-8 text-muted">
             I enjoy building automation tools, monitoring systems, APIs, and practical web products that solve real problems.
+          </p>
+          <p className="mt-5 leading-8 text-muted">
+            B.Eng. Telecommunication Engineering, Federal University of Technology, Minna (2026).
           </p>
           <p className="mt-5 leading-8 text-muted">
             My main stack includes Python, FastAPI, Django, PostgreSQL, React, Tailwind CSS, and Go. I also explore Web3 systems and have written smart contracts using Vyper.

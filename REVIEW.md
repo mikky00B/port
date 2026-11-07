@@ -62,3 +62,45 @@ The entire feature and `agents.md`/`handoff.md` are untracked. Commit the featur
 ## Uncertainties
 
 - `readDate` (`src/lib/posts.ts:47`) accepts any string `new Date()` can parse; a locale-formatted date such as `Oct 25 2026` would parse but could shift on timezone. The error message documents the ISO convention — risk is author-controlled and low.
+
+---
+
+# Review log — 2026-11-07: identity rebrand, resume overhaul, projects split, case-study redesign
+
+## Outcome: PASS (with process notes)
+
+Scope: the owner's working-tree changes since `8c0069d`, excluding the previously reviewed branding files (`src/app/icon.svg`, `src/app/apple-icon.tsx`, `src/app/opengraph-image.tsx`, the Navbar cm tile, `HANDOFF.md`, `docs/`), which belong to the prior task.
+
+## What changed (owner's diff)
+
+- **Identity rebrand**: `socials.identity` is now "Software Engineer"; layout metadata titles/descriptions, about page, footer, and the home hero derive from it. About page gained the B.Eng. degree line.
+- **Resume overhaul**: new `src/data/resume.ts` (profile, roles, skills, education); the resume page is now data-driven with a portrait (`public/clevermike.jpeg`), contact line (mailto + tel), and a real Experience section; PDF renamed to `Michael_Abulude_Backend_Developer_CV.pdf` (old file deleted); download attribute comes from the new `socials.resumeFile`.
+- **Home page**: featured/earlier split via new `getFeaturedProjects` (deterministic `FEATURED_ORDER`) and `getEarlierProjects`; new "Earlier work." section for archived projects; "Selected writing." curated via new `getPostsInOrder`.
+- **Case studies**: real screenshots via `next/image` (`public/projects/deploydock.png` 1440x900, `watchdog.png` 1440x700), a "The problem" card (`project.challenge`), an "Architecture" section (`project.architecture` + `ArchitectureDiagram`), and the placeholder "Screenshots / UI Mockup" card removed; meta cards now Focus/Category/Stack.
+- **Gatekeeper** promoted to featured. Tests added: `src/data/projects.test.ts` (featured order, earlier list) and a `getPostsInOrder` test in `posts.test.ts`.
+
+## Checks executed
+
+- `npm test`: 20/20 passed (18 posts + 2 project-selection tests).
+- `npx tsc --noEmit`: clean. `npm run lint`: clean.
+- `npm run build` (clean cycle: dev stopped, `.next` wiped): succeeds, 31/31 routes.
+- Routes verified live: `/`, `/about`, `/resume`, `/projects/deploydock`, `/projects/watchdog` all 200; new CV PDF 200; old `Resu.pdf` 404 (expected after the rename).
+- Rendered content verified: new identity on home, "Earlier work" (3 archived projects), "Selected writing" (2 curated posts), case-study image element (src + srcset), descriptive alt text, "The problem"/"Architecture" sections, portrait on resume.
+- No stale references: grep for `Resu.pdf` and `Backend-Focused` across `src` returns nothing.
+- `architecture` is a required field on every project, so the case-study Architecture section is safe for future projects.
+- Asset dims verified with file inspection: PNGs and the portrait match the dimensions declared in code exactly.
+
+## Findings
+
+1. **Process — `HANDOFF.md` not updated for this change set** (still documents the previous branding task). The working agreement puts this on the developer; update before committing.
+2. **Commit hygiene — the old PDF deletion is unstaged** (` D` in status). A plain file-by-file `git add` would leave both PDFs in the repo; use `git add -A` or stage the deletion explicitly. The tree also mixes this change set with the uncommitted branding files from the prior task — two logical commits recommended.
+3. **Observation (privacy) — phone and email are now public on `/resume`** (`tel:`/`mailto:` links). This mirrors the CV, so presumably deliberate, but `tel:` links are scraped by bots; confirm it is intended.
+4. **Suggestion — case-study coverage is uneven**: 4 featured projects, only DeployDock and Watchdog have case studies (and only those two have images). Not a defect; case studies for Gatekeeper and Swindle would balance the grid.
+5. **Suggestion (future polish) — `ProjectCard` on the home grid is text-only**; the new project images currently appear only on case studies. Optional thumbnails on `ProjectCard` would let the new assets do more work.
+
+## Positive notes
+
+- Tests accompany the data changes (working agreement followed): deterministic featured ordering is asserted, and `getPostsInOrder`'s skip-unknown behavior is covered.
+- Real screenshots with specific, descriptive alt text replace the placeholder mockup card.
+- The rebrand was done through a single source (`socials.identity`) rather than scattered string edits.
+- Reviewer note: an early "missing image" signal during verification was caused by the reviewer's own build/dev double-run producing stale artifacts; a clean rebuild confirmed the code was correct.

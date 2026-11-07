@@ -11,6 +11,12 @@ export type Project = {
   liveUrl?: string;
   githubUrl?: string;
   caseStudyUrl?: string;
+  image?: {
+    src: string;
+    alt: string;
+    width: number;
+    height: number;
+  };
   featured: boolean;
   summary: string;
   focus: string;
@@ -33,6 +39,12 @@ export const projects: Project[] = [
     liveUrl: "https://deploydock.tech",
     githubUrl: "https://github.com/mikky00B/DeployDock",
     caseStudyUrl: "/projects/deploydock",
+    image: {
+      src: "/projects/deploydock.png",
+      alt: "DeployDock homepage. The headline reads “Deploy to your own servers,” beside a control panel with four applications and a live deploy log.",
+      width: 1440,
+      height: 900
+    },
     featured: true,
     summary:
       "DeployDock is a self-hosted deployment control panel for developers and small teams already running apps on VPS servers. It automates the workflow you already have — connect servers, register apps, run one-click deploys, stream logs, restart services, and roll back failed releases — through an on-demand SSH bridge or an outbound-only Go agent that health-checks each new container before switching traffic.",
@@ -72,6 +84,12 @@ export const projects: Project[] = [
     liveUrl: "https://watchdog.clevermike.studio",
     githubUrl: "https://github.com/mikky00B/WATCHDOG",
     caseStudyUrl: "/projects/watchdog",
+    image: {
+      src: "/projects/watchdog.png",
+      alt: "WATCHDOG homepage. The headline reads “Know it's down before your clients do,” beside a dashboard with four monitors, two failed checks, and an open incident.",
+      width: 1440,
+      height: 700
+    },
     featured: true,
     summary:
       "WATCHDOG is an uptime, API, and cron-job monitoring platform for small agencies and backend teams, with alerting, check history, incidents, and branded status pages.",
@@ -178,7 +196,7 @@ export const projects: Project[] = [
     challenge:
       "Building a gateway that keeps routing, upstream health, authentication, rate limits, analytics, and config reloads predictable under one operational surface.",
     githubUrl: "https://github.com/mikky00B/Gatekeeper",
-    featured: false,
+    featured: true,
     summary:
       "Gatekeeper is a self-hosted API gateway written in Go, designed around config-driven reverse proxy routes, multiple upstreams, round-robin load balancing, optional health checks, API key and JWT authentication, rate limiting, logging, analytics, TLS, an admin API, a static dashboard, and CLI helpers.",
     focus: "API gateway design, proxying, traffic control",
@@ -263,6 +281,24 @@ export const projects: Project[] = [
   }
 ];
 
+const FEATURED_ORDER = ["deploydock", "watchdog", "gatekeeper", "swindle"];
+
 export function getProject(slug: string) {
   return projects.find((project) => project.slug === slug);
+}
+
+export function getFeaturedProjects(): Project[] {
+  const featured = new Map(
+    projects.filter((project) => project.featured).map((project) => [project.slug, project])
+  );
+  const ordered = FEATURED_ORDER.flatMap((slug) => {
+    const project = featured.get(slug);
+    return project ? [project] : [];
+  });
+  const listed = new Set<string>(FEATURED_ORDER);
+  return [...ordered, ...projects.filter((project) => project.featured && !listed.has(project.slug))];
+}
+
+export function getEarlierProjects(): Project[] {
+  return projects.filter((project) => !project.featured);
 }

@@ -8,18 +8,18 @@ import { getPostSummaries } from "@/lib/posts";
 export const metadata: Metadata = {
   metadataBase: new URL("https://clevermike.studio"),
   title: {
-    default: "Michael Abulude - Backend-Focused Software Developer",
+    default: "Michael Abulude - Software Engineer",
     template: "%s | Michael Abulude"
   },
   description:
-    "Personal website of Michael Abulude, a backend-focused software developer building APIs, monitoring tools, automation systems, and practical web products with Python, FastAPI, Django, Go, React, and PostgreSQL.",
+    "Personal website of Michael Abulude, a software engineer building APIs, monitoring tools, automation systems, and practical web products with Python, FastAPI, Django, Go, React, and PostgreSQL.",
   alternates: {
     types: {
       "application/rss+xml": "/rss.xml"
     }
   },
   openGraph: {
-    title: "Michael Abulude - Backend-Focused Software Developer",
+    title: "Michael Abulude - Software Engineer",
     description:
       "Portfolio, resume, and projects for Michael Abulude.",
     url: "https://clevermike.studio",
