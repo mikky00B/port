@@ -1,0 +1,141 @@
+---
+title: "Network monitoring for backend developers"
+description: "How an outbound call spends its time, which errors and kernel counters match each stage, and what a backend or DevOps engineer should measure."
+date: 2026-11-09
+tags: [monitoring, networking, reliability]
+draft: false
+---
+
+Network monitoring is the measurement of what happens to packets and connections, as distinct from what your handler did after a request arrived. Backend and DevOps work keeps colliding with it, because the timeouts, pools, retries, DNS names, certificates, security groups, and NAT gateways in a service are all network behavior, while the log line they produce is often just `timeout`.
+
+If you can tell which stage consumed the time, you know which of those to change. If you cannot, you scale a handler that never ran, or you retry a call the other side already processed.
+
+## Four measurements people call by one name
+
+They answer different questions, and a dashboard that mixes them will send you to the wrong machine.
+
+**Interface counters** come from the host or the switch. Bytes, packets, errors, drops, and discards on an interface. They tell you whether a NIC or a link is congested or receiving garbage. They say nothing about whether a particular URL works.
+
+**Path quality** is loss, round-trip time, and jitter between two points. TCP will hide a small amount of loss from the application by retransmitting, so the request can still succeed while the tail gets slow. Retransmits are the evidence. A slow handler does not increase them.
+
+**Reachability checks** open a real connection from a chosen place: resolve a name, complete TCP, complete TLS, send one request. The place is part of the result. A probe in the same subnet as the service will stay green through a bad public route that every external caller is hitting.
+
+**Client telemetry** is the same breakdown recorded by the process that makes the call. This is the one application code owns. It sees the pool, the address it actually dialed, and the errno. An outside probe that always dials a fresh connection cannot see a bug that only affects a connection taken from the pool.
+
+You want the outside check and the client timings. They diverge in useful ways. Outside failing while the process is healthy points at the public path or DNS as the caller sees it. The process failing while an outside check stays healthy points at that process's route, its resolver, or its pool.
+
+## Where the time went
+
+An outbound HTTPS call is a sequence of clocks. The useful client metric is a histogram per stage, per dependency, not a single "request duration."
+
+`curl -w` prints these clocks, and they are cumulative from the start of the transfer. Subtract neighbors or you will double-count.
+
+```bash
+curl -sS -o /dev/null \
+  -w 'code=%{http_code} ip=%{remote_ip}\nlookup=%{time_namelookup} connect=%{time_connect} tls=%{time_appconnect} first_byte=%{time_starttransfer} total=%{time_total}\n' \
+  https://payments.internal/health
+```
+
+```text
+code=200 ip=10.0.4.12
+lookup=0.012 connect=0.040 tls=0.091 first_byte=0.104 total=0.110
+```
+
+| Stage | Subtraction | What grew |
+| --- | --- | --- |
+| DNS | `lookup` | Resolver, search path, a name that fans out into several queries |
+| TCP | `connect - lookup` | Distance, loss, a drop rule, a full accept queue |
+| TLS | `tls - connect` | Handshake, certificate validation, a slow or overloaded peer |
+| Waiting for the response | `first_byte - tls` | The server after it received the request, or a proxy sitting on it |
+| Body | `total - first_byte` | Payload size, a small window, a link at its limit |
+
+On this sample, DNS is 12 ms, TCP is 28 ms, TLS is 51 ms, the server took 13 ms to send the first byte, and the body took 6 ms. A regression in only one of those columns is a different incident from a regression in all of them.
+
+Two readings are easy to misfile.
+
+A reused connection skips DNS, TCP, and TLS. Those three numbers collapse toward zero, and `first_byte` is almost the whole call. That is normal for HTTP keep-alive. It is also why a synthetic probe, which connects fresh every time, will not reproduce a failure that only happens on a warm pool.
+
+`first_byte - tls` includes everything between "request written" and "first response byte": server think time, and any proxy in the middle. To decide which, compare it with the handler's own timing on the far side. If the far side recorded a matching duration, the path did its job. If the far side has no log line for the request, the time was spent before the handler.
+
+## What the error is actually saying
+
+`timeout` is not an errno. The errors worth counting, separately, are these.
+
+**DNS.** `NXDOMAIN` means the name does not exist. `SERVFAIL` means a resolver or an authoritative server failed. A timeout means you never got an answer. A successful lookup can still be wrong: the TTL elapsed for some resolvers and not others, so half the instances dial the new address and half dial the old one. Log the IP you connected to, not only the hostname. Negative answers are cached too, so a name you just created can keep failing until the resolver's negative cache expires.
+
+In Kubernetes the default `ndots` is 5. A name with fewer than five dots is tried against the search domains before it is tried as an absolute name, which turns one lookup into several. That shows up as DNS time and as query volume, not as an application error. A trailing dot, or a name that already has enough dots, skips the search list.
+
+**Connection refused.** The peer, or a firewall that chooses to reject, sent a TCP RST during the handshake. This fails fast. Typical causes are nothing listening on that port, or the request reaching the wrong host.
+
+**Connect timeout.** SYNs were sent and nothing usable came back. On Linux, `net.ipv4.tcp_syn_retries` defaults to 6. With a 1 second initial RTO the last retransmission goes out around 63 seconds, and the kernel gives up on the attempt around 127 seconds. An HTTP client almost always gives up sooner, because its own connect timeout fires first. A connect timeout of a few seconds means the kernel was still retransmitting when the client abandoned the socket. Silence of that kind is a drop: routing, a security group, an ignore rule. It is a different fault from a refusal.
+
+IPv6 belongs in this bucket. `getaddrinfo` often returns AAAA records before A records. A client that tries those addresses one at a time will sit on a blackholed IPv6 route for the full connect timeout, then fall back to IPv4 and succeed. Callers see a slow, flaky dependency. The address family on the failed attempt is the whole diagnosis. Browsers overlap the two attempts. Plenty of service clients do not.
+
+**Read timeout.** The connection was established, and the response did not arrive before the client deadline. This is the first error in the list that might be the handler. Check whether the peer logged the request and how long it spent. A read timeout with no peer log entry is still the path: a proxy, an idle middlebox, or a connection the peer no longer has.
+
+**Connection reset.** A RST arrived on a connection that had been established. On a pooled socket this is commonly a middlebox or a server that already closed an idle connection, while the pool still considered it usable. The peer's access log has no request, because the bytes never arrived. Linux TCP keepalive will not save you here. `net.ipv4.tcp_keepalive_time` defaults to 7200 seconds, which is far longer than the idle timeout on a load balancer. Either the pool must close idle connections before the middlebox does, or the socket needs a keepalive idle time shorter than that middlebox. A reset with a connect time near zero is a reused socket. A reset during the handshake is the refused case, and you count it separately.
+
+Application retries sit on top of these. Retrying a connect timeout, once, is a second handshake for a request that was never written. Retrying a POST that timed out while waiting for the response can run the operation twice. The errno is what makes those policies different. A client that retries every failure the same way has assumed the path only fails before any work happens.
+
+## When the listening process is the thing dropping connections
+
+A service can be up, with low CPU, and still discard handshakes. The kernel's accept queue holds completed connections until the process calls `accept`. Its length is the smaller of the backlog passed to `listen` and `net.core.somaxconn`. Raising the sysctl has no effect if the process asked for a shorter backlog.
+
+On a listening socket, `ss` uses the two queue columns the other way around from an established socket.
+
+```bash
+ss -lnt
+```
+
+`Recv-Q` is how many connections are waiting for `accept`. `Send-Q` is the maximum. `Recv-Q` sitting against `Send-Q` means the application is not accepting as fast as handshakes complete.
+
+The counters:
+
+```bash
+nstat -as TcpExtListenOverflows TcpExtListenDrops TcpExtTCPReqQFullDoCookies TcpRetransSegs
+```
+
+Leave out `-z`. It resets the counters.
+
+`ListenOverflows` increments when the accept queue is full and another handshake completes. `ListenDrops` includes those and a few other drops on the listening socket. With `net.ipv4.tcp_abort_on_overflow` at its default of 0, the kernel does not RST the client. It discards the ACK, leaves the client waiting, and the client reports a timeout. Set to 1, the kernel RSTs and the client fails immediately. The default is why an overloaded accept loop looks like a network timeout rather than a fast error.
+
+`TCPReqQFullDoCookies` means the SYN backlog overflowed and SYN cookies took over. Cookies keep new connections possible, at the cost of some TCP options. A steady climb means the handshake queue is too small for the arrival rate, or something is filling it with SYNs that never complete.
+
+None of these move when the bug is in a query inside the handler. Handler slowness shows up after the connection is accepted, in `first_byte` and in the application's own timings.
+
+## Loss, ports, and tracking tables
+
+TCP retransmission is the application-visible face of loss. `TcpRetransSegs` climbing while request volume is flat means segments are being sent again. `ss -ti` on an established socket prints `rtt`, `rto`, and `retrans` for that connection. Rising RTT variance and retransmits, with handler time flat, is the network. Handler time rising in step with `first_byte`, and retransmits flat, is the program.
+
+Port and tracking exhaustion fail only under load, and only for new connections. Existing ones stay up, which makes a single-request trace look random.
+
+The local ephemeral range is `net.ipv4.ip_local_port_range`, by default `32768–60999`. Toward one destination address and port, each outbound connection consumes one of those ports for as long as the 4-tuple cannot be reused, including `TIME_WAIT`. Many destinations spread the usage. One hot dependency concentrates it.
+
+NAT and firewalls add a second ceiling: the connection-tracking table. When `nf_conntrack_count` reaches `nf_conntrack_max`, new flows are dropped and the kernel logs `nf_conntrack: table full, dropping packet`. Those files exist only when the module is loaded. The symptom is connect failures, at peak, to many destinations at once. Growing the table without knowing what filled it hides a leak of half-closed connections. Count the entries by state before you raise the maximum.
+
+## What to record
+
+From a probe outside the process, on an interval shorter than the outage you would care about, with a timeout shorter than the interval so checks cannot pile up:
+
+- DNS time, TCP time, TLS time, time to first byte, and the outcome class: `dns_error`, `connect_timeout`, `connect_refused`, `tls_error`, HTTP status, or read timeout
+- The IP that was dialed
+- Certificate `notAfter`. A handshake check turns expiry into a failed probe. Raise a ticket while the date is still weeks away. Paging on the morning of expiry is the incident itself
+
+Run that probe from more than one network. One probe measures one path.
+
+From the process, for each dependency:
+
+- The same stage histogram
+- Errors split by DNS, connect timeout, refused, reset, TLS, and read timeout
+- Whether the socket was new or taken from the pool. Reset-on-reuse is the idle-timeout bug. Connect timeouts on new sockets are the path
+- Pool gauges: in use, idle, and how long a caller waited for a connection. A wait here is saturation of the pool, and it never appears in a probe
+
+From the host, alert on the counters above as rates, not as raw totals. `ListenOverflows` increasing is a page if users call this process. Retransmits want a threshold relative to segments sent, because some loss is normal on a wide area path.
+
+A packet capture is how you confirm a hypothesis the counters already suggested: a SYN with no SYN-ACK, a RST from a particular hop, a handshake that dies on a certificate message. It is a poor thing to stare at before you know which stage failed.
+
+## Reading one bad call
+
+Take the stage times. Subtract them. Put the errno next to the stage it belongs to. Then look at the matching counter: resolver and the dialed IP, `ListenOverflows` on the peer, retransmits, conntrack, or the pool's reuse count.
+
+If the peer logged the request and its handler time accounts for `first_byte`, stop looking at the network. The remaining time is in the work. The measurements did what they are for when they tell you that cleanly.

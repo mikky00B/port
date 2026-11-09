@@ -1,0 +1,80 @@
+---
+title: "Patch, update, hotfix: three policies, one pipeline"
+description: "What patch, update, and hotfix each promise, how they show up in version numbers, and why a hotfix is still a release you can roll back."
+date: 2026-11-09
+tags: [releases, versioning, deployments]
+draft: false
+---
+
+The three words get used as if they were sizes. An update is big, a patch is small, a hotfix is whatever fits in a hurry. Size is the wrong axis. Each word is a promise about which version you are changing, what else is allowed to ride along, and how fast it is allowed to skip the line.
+
+Same pipeline either way. You build an artifact, you check it, you point traffic at it, and you keep the previous artifact so you can point traffic back. The policy decides the contents and the schedule. It does not invent a second way to change production.
+
+## A worked example
+
+Picture a billing service. Production is running `2.3.1`. `main` has already moved on toward `2.4.0`, which adds invoice export and a migration. A customer reports that tax on a refund is rounded the wrong way.
+
+Three honest responses, and one that only looks like a response:
+
+```text
+main        2.4.0-dev     the update, already in progress
+production  2.3.1         what customers are running
+patch       2.3.2         the rounding fix, cut from 2.3.1
+```
+
+Hold that picture. The rest of the post is what each label is allowed to mean.
+
+## Update
+
+An update moves people from the version they are on to the next version you intended to ship.
+
+`2.4.0` is an update. It may contain the export feature, the migration, a dependency bump, and a copy change that happened to land in the same stretch of work. Readers of the changelog expect new behavior. The schedule is the release train: a date, a deploy window, a decision that this set of commits is now "the next version."
+
+Semver writes this as a minor or major bump. Minor (`2.4.0`) adds something and stays compatible. Major (`3.0.0`) is allowed to break callers. In both cases the operational meaning is the same: this is the planned next version, and taking it means taking what was prepared for it.
+
+An update is allowed to wait. If another release is already going out, this one sits behind it. Waiting is not a failure of urgency. It is how you avoid two writers producing a machine that matches neither version.
+
+## Patch
+
+A patch corrects a version that is already out, and it leaves the rest of that version alone.
+
+`2.3.2` is a patch on `2.3.1`. The rounding fix is branched from the version production is running, not from `main`. Customers who cannot take the `2.4` migration still get the fix. Customers who only wanted the fix do not also get invoice export.
+
+Semver puts this in the third position: `MAJOR.MINOR.PATCH`. The compatibility rule is strict. Callers who worked on `2.3.1` still work on `2.3.2`. Behavior changes only where `2.3.1` was wrong.
+
+That rule is where patches go bad. The ticket says "fix rounding." The diff also renames a column, bumps a base image, and reformats a file somebody had open. Reviewers call it small because the ticket was small. The server experiences a migration. Once unrelated work is in the diff, the thing you are shipping is an update that was mislabeled, and anyone who backports it will backport the migration too.
+
+A patch keeps rollback honest. The previous version has to be able to run again, which means the fix cannot destroy data the old version still needs to read. Additive changes are safe. A destructive migration belongs on the update train, where everyone has agreed to move forward together.
+
+## Hotfix
+
+A hotfix is a patch with a clock on it. Production is hurting now, and this correction has to reach the broken environment before the regular train.
+
+The rounding bug is double-charging refunds this afternoon. You do not wait for Tuesday's `2.4.0`. You cut `2.3.2` from `2.3.1`, review the fix and nothing else, build it, check it, and ship it to the environment that is on fire. Work that is queued and has not started can move aside. A release that is already in the middle of switching traffic still finishes or fails on its own. Stopping it halfway leaves two partial versions and no artifact that matches either of them.
+
+The clock changes order. It does not change the contents. A hotfix that also "cleans up a few things" is an update wearing a scarier name. The scary name is how unrelated risk gets into production on a Friday, because nobody wants to be the person who slowed down an incident.
+
+After it is out, the fix has to exist in two places. It is on the branch that production just received. It also has to land on `main`, or the next update will be built from a tree that never contained it, and `2.4.0` will ship the bug again. That second merge is part of the hotfix. Skipping it is how the same incident gets a sequel.
+
+<FlowDiagram
+  steps={["Branch from what is running", "Fix only that bug", "Ship and check it", "Merge the fix forward"]}
+  caption="A hotfix is a patch that leaves the train, then gets back on."
+/>
+
+## What a hotfix is not
+
+Opening a shell on the server, editing a file, and restarting the process feels like a hotfix. It is an unrecorded edit.
+
+Production looks fixed, because one request just succeeded. The next rollback puts back the previous artifact and brings the bug with it, or puts it back and deletes the only copy of the fix. The next ordinary deploy checks out a tree that does not contain the edit, and the fix vanishes on a release that was supposed to be about something else.
+
+A real hotfix still produces an artifact you can name, still gets checked before it takes traffic, and still leaves the previous version in place for the way back. If the check fails, the old version keeps serving. A known bug is a better production than a fix that took the traffic and never became healthy.
+
+## How to choose
+
+Ask three questions, in order.
+
+1. Are you moving people to the next version you already planned, including the other work that belongs to it? That is an update.
+2. Are you correcting a version that is already out, without bringing the rest of `main` along? That is a patch.
+3. Does that correction have to reach production before the train, because the current version is causing harm right now? That is a hotfix. It follows the patch rules, and then you merge it forward so the train does not regress it.
+
+The word on the ticket is cheap. The promise inside it is the part that decides what you ship, what you refuse to include, and what you can return to when the new version is wrong.
