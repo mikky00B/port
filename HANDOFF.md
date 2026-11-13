@@ -6,7 +6,7 @@ Teaching post on network monitoring for backend and DevOps developers. General e
 ## Status
 - [x] `content/posts/network-monitoring-for-backend-developers.mdx` published (`draft: false`, 2026-11-09)
 - [x] No `project` link, so it does not appear on a case study
-- [ ] Homepage selected writing is unchanged
+- [x] Homepage selected writing now leads with System Design 01, followed by the Termii opener and the DeployDock post
 - [x] Earlier teaching post `patch-update-hotfix-three-policies` stays as written, also without a project link
 
 ## Changes
@@ -16,7 +16,7 @@ Teaching post on network monitoring for backend and DevOps developers. General e
 - Title is "Network monitoring for backend developers".
 - Tags are `monitoring`, `networking`, `reliability`.
 - WATCHDOG is not mentioned. The previous correction was that teaching posts stay independent of a product.
-- Homepage pins were left as they are.
+- Homepage pins now include System Design 01 at the top, then the Termii opener and the DeployDock release post.
 
 ## Test results
 - Dev server on port 3000. `/blog/network-monitoring-for-backend-developers` returns 200. The title, `curl -w` timings, and `ListenOverflows` are in the article. The 14:10 incident frame is gone.

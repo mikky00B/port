@@ -94,7 +94,7 @@ a {
 }
 
 .prose-dev img {
-  @apply mt-6 rounded-lg border border-line;
+  @apply mt-6 h-auto max-w-full rounded-lg border border-line;
 }
 
 .prose-dev table {

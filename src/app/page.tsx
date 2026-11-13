@@ -18,6 +18,7 @@ export default function HomePage() {
   const featuredProjects = getFeaturedProjects();
   const earlierProjects = getEarlierProjects();
   const selectedPosts = getPostsInOrder([
+    "system-design-01",
     "termii-messaging-architecture-deep-dive",
     "deploydock-release-pipeline"
   ]);
@@ -111,7 +112,7 @@ export default function HomePage() {
         {selectedPosts.length > 0 ? (
           <section className="py-16">
             <div className="flex flex-wrap items-end justify-between gap-4">
-              <SectionHeader eyebrow="Writing" title="Selected writing." />
+              <SectionHeader eyebrow="Writing" title="Recent writing." />
               <Link
                 className="focus-ring rounded font-mono text-xs uppercase tracking-[0.18em] text-dim transition hover:text-text"
                 href="/blog"

@@ -1,0 +1,168 @@
+---
+title: "System Design 01"
+description: "How to think through any system design problem: what you are actually graded on, a five-step framework from requirements to trade-offs, back-of-the-envelope math, and the components every design needs."
+date: 2026-11-13
+tags: [system-design, architecture, interviews]
+series: System Design
+seriesOrder: 1
+draft: false
+---
+
+System design is the discipline of turning a vague one-line problem into a concrete system you can defend. "Design a URL shortener." "Design WhatsApp." No spec, no starter code, no single correct answer. What you produce instead is a set of decisions, and the reasoning behind them.
+
+This post is the foundation for a series. It covers the method: what you are graded on, a five-step framework you can follow under time pressure, and the components that show up in almost every design. Later parts will go deep on individual topics and on low-level design.
+
+Start with the sentence that reframes the whole exercise:
+
+> Nobody grades the diagram. They grade the reasoning that produced it.
+
+## What you are actually graded on
+
+Published interview rubrics across companies use five to eight explicit scoring dimensions, and they map almost one to one onto five skills:
+
+- **Communication.** A design you cannot explain is a design that does not exist. Interviewers watch how you state assumptions, ask questions, and respond when pushed back on.
+- **Structured thinking.** Moving through the problem in clear stages instead of jumping straight to Redis. A visible framework is part of the score.
+- **Technical judgment.** Knowing which tool fits which constraint, and saying what each choice costs. There is no architecture without trade-offs.
+- **Practical depth.** Knowing how things behave in production: what a cache miss costs, why a database replica lags, what happens when a queue fills up.
+- **Time management.** A 45-minute interview rewards a complete shallow design over a brilliant half design. Budgeting time is a graded skill.
+
+Requirements gathering alone is commonly weighted around 15% of the score in published rubrics, which surprises most candidates. The first ten minutes are not small talk. They are the highest-leverage part of the interview.
+
+## The five-step framework
+
+Different companies and books slice the interview differently, but a five-step loop covers them all and fits in your head:
+
+<FlowDiagram
+  steps={["Clarify requirements", "Data model and APIs", "High-level architecture", "Scale and edge cases", "Trade-offs and wrap-up"]}
+  caption="The loop every design follows, no matter what is being built."
+/>
+
+To make each step concrete, this post runs one example the whole way through: **design a URL shortener**. Take a service like bit.ly. Users paste a long URL and get a short code back. Anyone who hits that code gets redirected to the original.
+
+## Step 1: clarify requirements
+
+A vague prompt hides a dozen decisions. Surface them by separating the two requirement types:
+
+- **Functional requirements** describe what the system does: create a short link from a long URL, redirect a code to its destination, show click stats per link.
+- **Non-functional requirements** describe how well it does it: redirects should complete in under 100 ms, the service should target 99.9% availability, shortened links should be permanent, and losing a mapped link is unacceptable.
+
+Functional tells you what to build. Non-functional tells you what to optimize, and it is where most of the architecture comes from. A system that must survive losing a server is designed differently from one that may lose a few links.
+
+Then ask the questions that shrink the problem:
+
+1. Who are the users, and how many? Ten thousand or ten million changes everything downstream.
+2. What is the read versus write ratio? A shortener is read-heavy; a chat app is balanced.
+3. How long do we keep data? A year or forever?
+4. What should we optimize: latency, cost, or consistency?
+
+Write the answers down. They become the constraints you defend later. And treat the interviewer as a colleague, not an examiner: state an assumption, let them confirm or correct it, and build together. The rubric scores collaboration explicitly.
+
+## Step 2: data model and APIs
+
+Design the data before the boxes. The data model exposes the hardest problems early, and every later decision (database, cache, scale) hangs off it.
+
+For the shortener, the core entity is small:
+
+```text
+Link
+  code        string, unique, the short identifier
+  long_url    string
+  created_at  timestamp
+  owner_id    user reference, optional
+  expires_at  timestamp, optional
+```
+
+Then sketch the API surface. Three endpoints carry the whole product:
+
+```text
+POST /links              { long_url }              -> 201, { code }
+GET  /links/{code}       redirect (302) to long_url
+GET  /links/{code}/stats { clicks, created_at }    -> 200
+```
+
+Two things to notice. First, the redirect endpoint is the hot path: it serves most traffic, so it must touch as few systems as possible. Second, the unique `code` is the join key between the short world and the long world; how you generate it (random base62, counter plus hash, pregenerated pool) is a design decision with its own trade-offs.
+
+With the data shaped, pick the database. A default you can defend: **start relational**. SQL gives you transactions, constraints, and query flexibility, and it scales further than people assume. Reach for a NoSQL store only when you can name the specific reason: a flexible schema, write volume beyond what a primary can absorb, or access patterns that a join cannot serve efficiently. "The system must scale" is not a reason; a number from step 3 is.
+
+## Step 3: high-level architecture
+
+Before drawing anything, size the problem. Back-of-the-envelope estimation is arithmetic, not genius, and it converts "it should scale" into numbers that make decisions for you.
+
+Start from the conversions: a day has roughly 100,000 seconds (86,400), a month about 2.6 million, a year about 31.5 million. Then divide:
+
+```text
+Writes:  1M new links per day   -> 1M / 86,400   ~= 12 writes/s, peaks ~60/s
+Reads:   100M redirects per day -> 100M / 86,400 ~= 1,200 reads/s, peaks ~5k/s
+Storage: 1M links x 500 B       -> ~0.5 GB/day, ~180 GB/year
+Cache:   hot links fit in RAM   -> a few GB serves most traffic
+```
+
+Three decisions fall out of four lines of arithmetic. The read-to-write ratio is 100:1, so the design must optimize reads (cache layer, read replicas). Total storage over a decade is under 2 TB, so sharding the primary database is unjustified complexity here. Peak traffic of a few thousand simple queries per second is comfortable for a small fleet of stateless servers.
+
+Estimation also needs a feel for how slow things are. Order-of-magnitude numbers every design discussion relies on:
+
+```text
+L1 cache reference             0.5 ns
+Main memory reference          100 ns
+SSD random read (4 KB)         16-150 us
+Same-datacenter round trip     0.5 ms
+Disk seek                      10 ms
+Cross-continent round trip     150 ms
+```
+
+Memory is a hundred times faster than SSD, SSD is a hundred times faster than a disk seek, and a trip across the ocean costs more than everything else combined. Keep data close to computation, batch disk access, and never put a cross-continent call on a hot path without a plan.
+
+Now draw the system. Almost every read-heavy design starts as this shape:
+
+![Hand-drawn architecture of the URL shortener: a client browser sends requests through a load balancer to stateless API servers, which serve hot reads from a Redis cache, write new links to a primary database with two read replicas, publish click events to an events queue consumed by stats workers, and fetch static assets from a CDN.](/diagrams/system-design-01.svg)
+
+Each box has one job. The load balancer spreads requests across identical servers and stops routing to the ones that fail health checks. The API servers hold no session state, which is what lets you add ten more during a spike. The cache keeps hot reads off the database; the common pattern is cache-aside, where the application checks the cache first, falls back to the database, and populates the cache with a TTL. The primary database owns the writes, and the read replicas absorb redirect traffic, while click events flow through the queue to stats workers so that analytics never sit on the hot path.
+
+## Step 4: scale and edge cases
+
+A design that only works at the numbers from step 3 is a demo. Now stress it: what breaks at ten times the traffic, and what happens when things fail?
+
+Hunt the bottleneck deliberately. In the shortener, the hot path is the redirect, so the questions are: what does the cache miss path cost, what happens when a celebrity link makes one key hotter than the rest, and is the code-generation step a contention point under concurrent writes.
+
+Then hunt the failure points. The core vocabulary:
+
+- **Single point of failure (SPOF).** Any component with exactly one copy is a copy you will eventually lose. One load balancer, one database primary, one region: each is a SPOF until you say otherwise.
+- **Redundancy.** The cure for SPOF: multiple API servers behind the balancer, database replicas, deployments across availability zones. Redundancy converts "down" into "degraded".
+- **Fallbacks and failure behavior.** Systems fail; designs decide how. Timeouts on every external call, retries with exponential backoff, and graceful degradation (serve cached data slightly stale rather than nothing). The failure mode should be chosen, not discovered at 3 a.m.
+- **Monitoring.** You cannot operate what you cannot see. Latency, traffic, errors, and saturation are the four signals to instrument first, with alerts that fire before users do the instrumenting.
+
+Availability is where these numbers get honest. Each extra "nine" divides your allowed downtime by ten:
+
+<RateBars
+  rows={[
+    { label: "99% availability", value: 5256, display: "3.65 days down per year" },
+    { label: "99.9%", value: 525.6, display: "8.76 hours down per year" },
+    { label: "99.99%", value: 52.6, display: "52.6 minutes down per year" },
+    { label: "99.999%", value: 5.3, display: "5.3 minutes down per year" }
+  ]}
+  caption="Allowed downtime per year at each tier. Every additional nine is ten times harder to buy."
+/>
+
+The bar lengths are the point: five nines means your entire yearly failure budget is one coffee break. That budget decides how much redundancy a design needs, and it is why the non-functional requirements in step 1 matter more than the functional ones.
+
+## Step 5: trade-offs and wrap-up
+
+No design wins everywhere, and the last step is where you prove you know it. Close the interview by naming your decisions and their costs, out loud:
+
+- Relational database: strong consistency and flexible queries, traded against horizontal write scale. If the write volume grew a thousandfold, the model would move to a key-value store with precomputed counters.
+- Cache-aside: simple and resilient, traded against stale reads until the TTL expires. For click stats, slight staleness is acceptable; for a banking balance, it would not be.
+- Stateless API servers: effortless horizontal scaling, traded against any in-process state. Sessions move to the database or a shared store.
+
+Then state what you would do with more time: rate limiting, analytics pipelines, code-generation strategy, multi-region. A good wrap-up shows the interviewer that with another hour, you know exactly where the design would go next.
+
+## Where low-level design fits
+
+Everything above is high-level design: components, data flow, and the reasoning between them. The counterpart is **low-level design (LLD)**, which zooms from systems into code: turning the same vague requirements into classes, methods, and relationships, deciding who owns what and who talks to whom, and producing a class diagram or UML plus implementation.
+
+LLD leans on object-oriented fundamentals: encapsulation, abstraction, inheritance, and polymorphism, plus the relationships between classes (which class references which, and who constructs whom). It is examined in a different interview format, either as a machine-coding round where you implement the design in a real editor, or as a whiteboard round focused on the model. That is exactly where part 02 of this series goes.
+
+## The takeaway
+
+The five steps are not a formality; they are a communication scaffold that keeps you complete under pressure. Requirements frame the problem, the data model exposes it, architecture solves it, scale analysis hardens it, and trade-offs prove you understood it.
+
+The components are the least memorable part. Load balancers and caches are furniture; every company has them. What transfers to any system, and what you are being graded on, is the habit of turning vagueness into stated assumptions, assumptions into numbers, and numbers into decisions you can defend.
