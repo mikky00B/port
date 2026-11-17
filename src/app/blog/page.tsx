@@ -2,13 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PostCard } from "@/components/blog/PostCard";
 import { Container } from "@/components/ui/Container";
-import { SectionHeader } from "@/components/ui/SectionHeader";
 import { getAllPosts, getAllTags } from "@/lib/posts";
 
 export const metadata: Metadata = {
   title: "Blog",
   description:
-    "Technical deep dives into real infrastructure: How the pieces fit, where they break, and what the design decisions actually cost.",
+    "technical deep dives into real infrastructure: how the pieces fit, where they break, and what the design decisions actually cost.",
   alternates: {
     canonical: "/blog",
     types: {
@@ -24,16 +23,21 @@ export default function BlogIndexPage() {
 
   return (
     <Container className="py-16">
-      <SectionHeader
-        eyebrow="Blog"
-        title="software systems, taken apart."
-        description="Technical deep dives into real infrastructure: How the pieces fit, where they break, and what the design decisions actually cost."
-      />
+      <div className="max-w-2xl">
+        <p className="font-mono text-xs tracking-[0.14em] text-gilt">$ git log --oneline writing</p>
+        <h1 className="mt-3 text-3xl font-medium tracking-wide text-glint sm:text-4xl">
+          software systems, taken apart.
+        </h1>
+        <p className="mt-4 text-[15px] leading-7 text-moss">
+          technical deep dives into real infrastructure: how the pieces fit, where they break, and
+          what the design decisions actually cost.
+        </p>
+      </div>
 
       {tags.length > 0 ? (
         <div className="mt-8 flex flex-wrap gap-2">
           <Link
-            className="focus-ring rounded border border-accent px-2.5 py-1 font-mono text-xs text-text"
+            className="focus-ring rounded border border-gilt/50 bg-gilt/10 px-2.5 py-1 font-mono text-xs text-gilt"
             href="/blog"
           >
             all {posts.length}
@@ -41,7 +45,7 @@ export default function BlogIndexPage() {
           {tags.map((tag) => (
             <Link
               key={tag.tag}
-              className="focus-ring rounded border border-line px-2.5 py-1 font-mono text-xs text-dim transition hover:border-accent hover:text-text"
+              className="focus-ring rounded border border-bone/[0.12] px-2.5 py-1 font-mono text-xs text-ash transition hover:border-gilt/40 hover:text-gilt"
               href={`/blog/tag/${tag.tag}`}
             >
               #{tag.tag} {tag.count}
@@ -51,17 +55,17 @@ export default function BlogIndexPage() {
       ) : null}
 
       {posts.length === 0 ? (
-        <p className="mt-12 text-muted">No posts published yet.</p>
+        <p className="mt-12 text-moss">no posts published yet.</p>
       ) : null}
 
       <div className="mt-12 space-y-12">
         {years.map((year) => (
           <section key={year}>
             <div className="flex items-center gap-4">
-              <h2 className="font-mono text-xs uppercase tracking-[0.22em] text-dim">{year}</h2>
-              <span className="h-px flex-1 bg-line" aria-hidden="true" />
+              <h2 className="font-mono text-xs tracking-[0.22em] text-ash">{year}</h2>
+              <span className="h-px flex-1 bg-bone/10" aria-hidden="true" />
             </div>
-            <div className="mt-5 grid gap-5">
+            <div className="mt-5 grid gap-4">
               {posts
                 .filter((post) => post.date.startsWith(year))
                 .map((post) => (

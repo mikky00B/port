@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { TableOfContents } from "@/components/blog/TableOfContents";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { formatPostDate } from "@/lib/format";
 import type { Post, PostSummary, SeriesInfo } from "@/lib/posts";
@@ -22,11 +21,11 @@ export function PostLayout({ post, newer, older, relatedProject, series, childre
     <Container className="py-16">
       <div className="mx-auto max-w-5xl">
         <Link
-          className="focus-ring inline-flex items-center gap-2 rounded font-mono text-xs uppercase tracking-[0.18em] text-dim transition hover:text-text"
+          className="focus-ring inline-flex items-center gap-2 rounded font-mono text-xs tracking-[0.14em] text-ash transition hover:text-gilt"
           href="/blog"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          All posts
+          cd /blog
         </Link>
 
         <div className="mt-8 grid gap-12 lg:grid-cols-[minmax(0,1fr)_200px]">
@@ -37,7 +36,7 @@ export function PostLayout({ post, newer, older, relatedProject, series, childre
                   {post.tags.map((tag) => (
                     <li key={tag}>
                       <Link
-                        className="focus-ring rounded border border-line px-2 py-1 font-mono text-xs text-dim transition hover:border-accent hover:text-text"
+                        className="focus-ring rounded border border-bone/[0.12] px-2 py-1 font-mono text-xs text-ash transition hover:border-gilt/40 hover:text-gilt"
                         href={`/blog/tag/${tag}`}
                       >
                         #{tag}
@@ -47,36 +46,36 @@ export function PostLayout({ post, newer, older, relatedProject, series, childre
                 </ul>
               ) : null}
 
-              <h1 className="mt-5 font-heading text-4xl font-semibold tracking-tight text-text sm:text-5xl">
+              <h1 className="mt-5 font-heading text-4xl font-medium tracking-tight text-glint sm:text-5xl">
                 {post.title}
               </h1>
-              <p className="mt-5 max-w-2xl text-lg leading-8 text-muted">{post.description}</p>
-              <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs text-dim">
+              <p className="mt-5 max-w-2xl text-lg leading-8 text-moss">{post.description}</p>
+              <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs text-ash/80">
                 <time dateTime={post.date}>{formatPostDate(post.date)}</time>
                 <span aria-hidden="true">/</span>
                 <span>{post.readingTime} min read</span>
                 {post.draft ? (
-                  <span className="rounded border border-line px-1.5 py-0.5 text-warning">draft</span>
+                  <span className="rounded border border-gilt/40 px-1.5 py-0.5 text-gilt">draft</span>
                 ) : null}
               </div>
             </header>
 
             {series ? (
               <nav
-                className="mt-8 rounded-lg border border-line bg-panel/60 p-5"
+                className="mt-8 rounded-md border border-bone/[0.12] bg-soot/60 p-5"
                 aria-label={`Series: ${series.name}`}
               >
-                <p className="font-mono text-xs uppercase tracking-[0.18em] text-dim">{series.name}</p>
+                <p className="font-mono text-xs tracking-[0.14em] text-gilt">{series.name}</p>
                 <ol className="mt-3 space-y-2">
                   {series.parts.map((part, index) => (
                     <li key={part.slug} className="font-mono text-sm leading-6">
                       {part.slug === post.slug ? (
-                        <span className="text-text">
-                          Part {index + 1}: {part.title}
+                        <span className="text-glint">
+                          part {index + 1}: {part.title}
                         </span>
                       ) : (
-                        <Link className="text-dim transition hover:text-text" href={`/blog/${part.slug}`}>
-                          Part {index + 1}: {part.title}
+                        <Link className="text-ash transition hover:text-bone" href={`/blog/${part.slug}`}>
+                          part {index + 1}: {part.title}
                         </Link>
                       )}
                     </li>
@@ -88,45 +87,45 @@ export function PostLayout({ post, newer, older, relatedProject, series, childre
             <article className="prose-dev mt-10">{children}</article>
 
             {relatedProject ? (
-              <Card className="mt-14">
-                <p className="font-mono text-xs uppercase tracking-[0.18em] text-dim">Related project</p>
-                <h2 className="mt-3 font-heading text-xl font-semibold text-text">{relatedProject.title}</h2>
-                <p className="mt-2 text-sm leading-6 text-muted">{relatedProject.description}</p>
+              <div className="mt-14 rounded-md border border-bone/[0.12] bg-sheet/60 p-5">
+                <p className="font-mono text-xs tracking-[0.14em] text-gilt">related project</p>
+                <h2 className="mt-3 text-xl font-medium tracking-wide text-glint">{relatedProject.title}</h2>
+                <p className="mt-2 text-sm leading-6 text-moss">{relatedProject.description}</p>
                 <div className="mt-5 flex flex-wrap gap-3">
                   {relatedProject.caseStudyUrl ? (
                     <Button href={relatedProject.caseStudyUrl} variant="secondary">
-                      Read the case study
+                      read the case study
                     </Button>
                   ) : null}
                   {relatedProject.liveUrl ? (
                     <Button href={relatedProject.liveUrl} variant="ghost">
-                      Live site ↗
+                      live site ↗
                     </Button>
                   ) : null}
                 </div>
-              </Card>
+              </div>
             ) : null}
 
             {older || newer ? (
-              <nav className="mt-14 grid gap-4 border-t border-line pt-8 sm:grid-cols-2" aria-label="More posts">
+              <nav className="mt-14 grid gap-4 border-t border-bone/10 pt-8 sm:grid-cols-2" aria-label="More posts">
                 {older ? (
                   <Link
-                    className="focus-ring rounded-lg border border-line bg-panel/60 p-4 transition hover:border-accent"
+                    className="focus-ring rounded-md border border-bone/[0.12] bg-soot/60 p-4 transition hover:border-gilt/40"
                     href={`/blog/${older.slug}`}
                   >
-                    <span className="font-mono text-xs uppercase tracking-[0.18em] text-dim">Older</span>
-                    <span className="mt-2 block font-heading text-base font-semibold text-text">{older.title}</span>
+                    <span className="font-mono text-xs tracking-[0.14em] text-ash">older</span>
+                    <span className="mt-2 block font-heading text-base font-medium text-glint">{older.title}</span>
                   </Link>
                 ) : (
                   <span className="hidden sm:block" />
                 )}
                 {newer ? (
                   <Link
-                    className="focus-ring rounded-lg border border-line bg-panel/60 p-4 transition hover:border-accent sm:text-right"
+                    className="focus-ring rounded-md border border-bone/[0.12] bg-soot/60 p-4 transition hover:border-gilt/40 sm:text-right"
                     href={`/blog/${newer.slug}`}
                   >
-                    <span className="font-mono text-xs uppercase tracking-[0.18em] text-dim">Newer</span>
-                    <span className="mt-2 block font-heading text-base font-semibold text-text">{newer.title}</span>
+                    <span className="font-mono text-xs tracking-[0.14em] text-ash">newer</span>
+                    <span className="mt-2 block font-heading text-base font-medium text-glint">{newer.title}</span>
                   </Link>
                 ) : null}
               </nav>

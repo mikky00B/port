@@ -5,22 +5,42 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#050505",
-        panel: "#111111",
-        panel2: "#181818",
-        line: "#2A2A2A",
-        text: "#F5F5F5",
-        muted: "#A3A3A3",
-        dim: "#737373",
-        accent: "#FFFFFF",
-        success: "#E5E5E5",
-        warning: "#D4D4D4",
-        error: "#F5F5F5"
+        // shared site palette — retargeted to the tree's warm paper tones so
+        // the blog and remaining pages read as part of the same scene
+        background: "#171614", // bark
+        panel: "#1c1b18", // sheet
+        panel2: "#141311", // soot
+        line: "#34312a", // bone/12 over bark
+        text: "#dedbd2", // bone
+        muted: "#b5b2a9", // moss
+        dim: "#8a8781", // ash
+        accent: "#c9a25e", // gilt
+        success: "#a8a59c", // fog
+        warning: "#c9a25e", // gilt
+        error: "#dedbd2", // bone
+        // tree homepage palette
+        bark: "#171614",
+        sheet: "#1c1b18",
+        soot: "#141311",
+        bone: "#dedbd2",
+        glint: "#e7e5dd",
+        note: "#c9c6bd",
+        ash: "#8a8781",
+        fog: "#a8a59c",
+        moss: "#b5b2a9",
+        gilt: "#c9a25e"
       },
       fontFamily: {
-        heading: ["Space Grotesk", "Inter", "ui-sans-serif", "system-ui"],
-        sans: ["Inter", "ui-sans-serif", "system-ui"],
-        mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "monospace"]
+        heading: ["var(--font-app-sans)", "Inter", "ui-sans-serif", "system-ui"],
+        sans: ["var(--font-app-sans)", "Inter", "ui-sans-serif", "system-ui"],
+        mono: [
+          "var(--font-app-mono)",
+          "JetBrains Mono",
+          "ui-monospace",
+          "SFMono-Regular",
+          "monospace"
+        ],
+        hand: ["var(--font-app-hand)", "Segoe Script", "cursive"]
       },
       boxShadow: {
         glow: "0 0 0 1px rgba(255, 255, 255, 0.06), 0 24px 70px rgba(0, 0, 0, 0.42)"
